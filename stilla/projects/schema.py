@@ -138,7 +138,7 @@ class ProjectDocument:
         }
 
     @classmethod
-    def from_dict(cls, data: object) -> ProjectDocument:
+    def from_dict(cls, data: object) -> "ProjectDocument":
         """Validate an untrusted JSON-like object and reject unknown top-level keys."""
         if not isinstance(data, dict):
             raise ProjectValidationError("project document must be an object")
