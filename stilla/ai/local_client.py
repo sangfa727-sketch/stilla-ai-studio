@@ -1,8 +1,8 @@
 """Bounded, redirect-free transport for a local OpenAI-compatible API."""
 from __future__ import annotations
 
-import json
 import ipaddress
+import json
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
@@ -19,8 +19,9 @@ class ProviderConnectionError(RuntimeError):
 
 
 class _NoRedirect(HTTPRedirectHandler):
-    def redirect_request(self, req: Request, fp: Any, code: int, msg: str,
-                         headers: Any, newurl: str) -> None:
+    def redirect_request(
+        self, req: Request, fp: Any, code: int, msg: str, headers: Any, newurl: str
+    ) -> None:
         return None
 
 
@@ -70,7 +71,7 @@ class LocalOpenAICompatibleClient:
             raise ProviderConnectionError(
                 f"Local provider returned HTTP {exc.code}"
             ) from None
-        except (URLError, TimeoutError, OSError) as exc:
+        except (URLError, TimeoutError, OSError):
             # Do not expose exception strings: they may contain the configured URL.
             raise ProviderConnectionError(
                 "Could not connect to the local provider; check that Bionic is running"
