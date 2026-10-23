@@ -48,6 +48,12 @@ def _strict_dict(value: object, field: str, allowed: set[str]) -> dict[str, Any]
     return value
 
 
+def _required(data: dict[str, Any], field: str, required: set[str]) -> None:
+    missing = required - data.keys()
+    if missing:
+        raise PlanningValidationError(f"{field} is missing required fields")
+
+
 @dataclass(frozen=True, slots=True)
 class CreativeBrief:
     """Human-approved creative intent and constraints for a planned video."""
@@ -92,6 +98,7 @@ class CreativeBrief:
             "title", "audience", "objective", "language", "tone",
             "target_duration_seconds", "aspect_ratio", "constraints",
         })
+        _required(obj, "brief", {"title", "audience", "objective"})
         return cls(**obj)
 
 
@@ -146,10 +153,13 @@ class ScriptDocument:
         raw = _items(obj.get("segments", []), "script.segments")
         parsed = []
         for item in raw:
-            parsed.append(ScriptSegment(**_strict_dict(
+            segment_data = _strict_dict(
                 item, "script segment",
                 {"id", "text", "narration", "estimated_duration_seconds"},
-            )))
+            )
+            _required(segment_data, "script segment", {"id", "text"})
+            parsed.append(ScriptSegment(**segment_data))
+        _required(obj, "script", {"id", "title", "language"})
         return cls(id=obj.get("id"), title=obj.get("title"), language=obj.get("language"),
                    segments=tuple(parsed))
 
@@ -208,6 +218,7 @@ class StoryboardDocument:
             if not {"id", "script_segment_id", "visual_description"} <= set(frame_data):
                 raise PlanningValidationError("storyboard frame is missing required fields")
             frames.append(StoryboardFrame(**frame_data))
+        _required(obj, "storyboard", {"id", "title"})
         return cls(id=obj.get("id"), title=obj.get("title"), frames=tuple(frames))
 
 
@@ -264,8 +275,11 @@ class ShotPlan:
         raw = _items(obj.get("shots", []), "shot_plan.shots")
         shots = []
         for item in raw:
-            shots.append(Shot(**_strict_dict(
+            shot_data = _strict_dict(
                 item, "shot",
                 {"id", "storyboard_frame_id", "description", "duration_seconds", "camera", "generation_prompt"},
-            )))
+            )
+            _required(shot_data, "shot", {"id", "storyboard_frame_id", "description"})
+            shots.append(Shot(**shot_data))
+        _required(obj, "shot_plan", {"id", "title"})
         return cls(id=obj.get("id"), title=obj.get("title"), shots=tuple(shots))
