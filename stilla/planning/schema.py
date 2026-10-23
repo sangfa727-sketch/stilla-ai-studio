@@ -87,7 +87,7 @@ class CreativeBrief:
         }
 
     @classmethod
-    def from_dict(cls, data: object) -> "CreativeBrief":
+    def from_dict(cls, data: object) -> CreativeBrief:
         obj = _strict_dict(data, "brief", {
             "title", "audience", "objective", "language", "tone",
             "target_duration_seconds", "aspect_ratio", "constraints",
@@ -141,7 +141,7 @@ class ScriptDocument:
                 "segments": [segment.to_dict() for segment in self.segments]}
 
     @classmethod
-    def from_dict(cls, data: object) -> "ScriptDocument":
+    def from_dict(cls, data: object) -> ScriptDocument:
         obj = _strict_dict(data, "script", {"id", "title", "language", "segments"})
         raw = _items(obj.get("segments", []), "script.segments")
         parsed = []
@@ -196,7 +196,7 @@ class StoryboardDocument:
         return {"id": self.id, "title": self.title, "frames": [frame.to_dict() for frame in self.frames]}
 
     @classmethod
-    def from_dict(cls, data: object) -> "StoryboardDocument":
+    def from_dict(cls, data: object) -> StoryboardDocument:
         obj = _strict_dict(data, "storyboard", {"id", "title", "frames"})
         raw = _items(obj.get("frames", []), "storyboard.frames")
         frames = []
@@ -259,7 +259,7 @@ class ShotPlan:
         return {"id": self.id, "title": self.title, "shots": [shot.to_dict() for shot in self.shots]}
 
     @classmethod
-    def from_dict(cls, data: object) -> "ShotPlan":
+    def from_dict(cls, data: object) -> ShotPlan:
         obj = _strict_dict(data, "shot_plan", {"id", "title", "shots"})
         raw = _items(obj.get("shots", []), "shot_plan.shots")
         shots = []
