@@ -70,6 +70,8 @@ class LocalOpenAICompatibleClient:
         payload = self._request(self._base_url.rstrip("/") + "/models")
         if self._provider_config is None:
             return payload
+        if not isinstance(payload, dict):
+            raise ProviderConnectionError("Provider returned an invalid model list")
         data = payload.get("data")
         if not isinstance(data, list):
             raise ProviderConnectionError("Provider returned an invalid model list")
@@ -99,7 +101,7 @@ class LocalOpenAICompatibleClient:
             if not isinstance(message, dict) or set(message) != {"role", "content"}:
                 raise ValueError("each message must contain only role and content")
             role, content = message["role"], message["content"]
-            if role not in {"system", "user", "assistant"} or not isinstance(content, str):
+            if not isinstance(role, str) or role not in {"system", "user", "assistant"} or not isinstance(content, str):
                 raise ValueError("message role or content is invalid")
             if len(content) > 100_000:
                 raise ValueError("message content exceeds the size limit")
