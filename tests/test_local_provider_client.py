@@ -98,14 +98,14 @@ def test_response_size_is_bounded():
             return HugeResponse({})
 
     client._opener = HugeOpener()
-    with pytest.raises(ProviderRequestError, match="size limit"):
+    with pytest.raises(ProviderRequestError, match="exceeded 1 MB"):
         client.list_models()
 
 
 def test_network_errors_are_sanitized():
     client = LocalOpenAICompatibleClient(ProviderConfig())
     client._opener = FakeOpener([URLError("private detail")])
-    with pytest.raises(ProviderRequestError, match="Could not reach"):
+    with pytest.raises(ProviderRequestError, match="Could not connect"):
         client.list_models()
 
 
