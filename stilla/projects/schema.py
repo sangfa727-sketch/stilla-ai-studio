@@ -84,6 +84,8 @@ class ProjectDocument:
     def __post_init__(self) -> None:
         _require_id(self.id, "project.id")
         _require_text(self.name, "project.name", max_length=500)
+        if isinstance(self.schema_version, bool) or not isinstance(self.schema_version, int):
+            raise ProjectValidationError("schema_version must be an integer")
         if self.schema_version != CURRENT_SCHEMA_VERSION:
             raise ProjectValidationError("unsupported project schema version")
         if len(self.scenes) > _MAX_SCENES:
@@ -147,6 +149,8 @@ class ProjectDocument:
         }
         if set(data) - allowed:
             raise ProjectValidationError("project document contains unsupported top-level fields")
+        if isinstance(data.get("schema_version"), bool) or not isinstance(data.get("schema_version"), int):
+            raise ProjectValidationError("schema_version must be an integer")
         if data.get("schema_version") != CURRENT_SCHEMA_VERSION:
             raise ProjectValidationError("unsupported project schema version")
         scenes_raw = data.get("scenes", [])
