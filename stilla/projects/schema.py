@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
 import re
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -74,7 +74,7 @@ class AssetReference:
 class ProjectDocument:
     id: str
     name: str
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     schema_version: int = CURRENT_SCHEMA_VERSION
     scenes: tuple[Scene, ...] = ()
@@ -102,7 +102,7 @@ class ProjectDocument:
             if not isinstance(value, str) or len(value) > 100:
                 raise ProjectValidationError(f"{field_name} must be an ISO timestamp string")
             try:
-                datetime.fromisoformat(value.replace("Z", "+00:00"))
+                datetime.fromisoformat(value)
             except ValueError as exc:
                 raise ProjectValidationError(f"{field_name} must be an ISO timestamp string") from exc
         if not isinstance(self.metadata, dict):
