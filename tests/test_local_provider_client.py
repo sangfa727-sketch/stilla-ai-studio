@@ -82,7 +82,7 @@ def test_invalid_provider_response_is_sanitized():
     client = LocalOpenAICompatibleClient(ProviderConfig())
     client._opener = FakeOpener([{"data": "not-a-list"}])
 
-    with pytest.raises(ProviderRequestError, match="invalid model list"):
+    with pytest.raises(ProviderRequestError, match="unexpected JSON shape"):
         client.list_models()
 
 
