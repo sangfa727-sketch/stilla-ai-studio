@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import ipaddress
 import json
+from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from typing import Any
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from stilla.ai.local_openai_compatible import LocalProviderConfig
