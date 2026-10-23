@@ -29,9 +29,10 @@ def project() -> ProjectDocument:
 
 def test_project_round_trip(tmp_path: Path) -> None:
     path = tmp_path / "morning.stilla.json"
-    save_project(path, project())
+    original = project()
+    save_project(path, original)
     loaded = load_project(path)
-    assert loaded == project()
+    assert loaded == original
     assert loaded.scenes[0].title == "First light"
     assert loaded.assets[0].relative_path == "media/morning.mp4"
 
