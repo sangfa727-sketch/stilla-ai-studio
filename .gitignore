@@ -1,0 +1,35 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# User projects, uploaded media, generated results, and model weights
+workspace/
+data/uploads/
+data/outputs/
+outputs/
+models/
+*.safetensors
+*.ckpt
+*.gguf
+*.pt
+*.pth
+*.onnx
+*.engine
+
+# Build artifacts
+dist/
+build/
+*.spec
