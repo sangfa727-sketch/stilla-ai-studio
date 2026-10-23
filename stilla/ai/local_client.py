@@ -10,7 +10,6 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from stilla.ai.local_openai_compatible import LocalProviderConfig
 
-
 _MAX_RESPONSE_BYTES = 1_048_576
 
 
