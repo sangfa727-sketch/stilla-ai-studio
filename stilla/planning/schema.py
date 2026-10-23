@@ -201,7 +201,7 @@ class StoryboardDocument:
         raw = _items(obj.get("frames", []), "storyboard.frames")
         frames = []
         for item in raw:
-            frames.append(StoryboardFrame(**_strict_dict(
+            frame_data = _strict_dict(
                 item, "storyboard frame",
                 {"id", "script_segment_id", "visual_description", "on_screen_text", "asset_prompt"},
             )))
