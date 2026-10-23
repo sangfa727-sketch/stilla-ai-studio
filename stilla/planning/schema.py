@@ -116,8 +116,10 @@ class ScriptSegment:
         duration = self.estimated_duration_seconds
         if isinstance(duration, bool) or not isinstance(duration, (int, float)):
             raise PlanningValidationError("script segment duration must be a number")
-        if not math.isfinite(duration) or not 0 < duration <= 86_400:
+        if duration <= 0 or duration > 86_400:
             raise PlanningValidationError("script segment duration must be between 0 and 86400")
+        if isinstance(duration, float) and not math.isfinite(duration):
+            raise PlanningValidationError("script segment duration must be finite")
 
     def to_dict(self) -> dict[str, Any]:
         return {"id": self.id, "text": self.text, "narration": self.narration,
