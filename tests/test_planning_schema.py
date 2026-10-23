@@ -78,3 +78,25 @@ def test_rejects_wrong_item_types_and_excessive_text():
 def test_rejects_nonfinite_shot_duration():
     with pytest.raises(PlanningValidationError):
         Shot("shot1", "frame1", "Description", math.nan)
+
+
+
+@pytest.mark.parametrize(
+    ("factory", "data"),
+    [
+        (CreativeBrief.from_dict, {"audience": "A", "objective": "O"}),
+        (ScriptDocument.from_dict, {"id": "s1", "title": "T"}),
+        (ScriptDocument.from_dict, {
+            "id": "s1", "title": "T", "language": "en",
+            "segments": [{"id": "seg1"}],
+        }),
+        (ShotPlan.from_dict, {
+            "id": "p1", "title": "T",
+            "shots": [{"id": "shot1", "storyboard_frame_id": "f1"}],
+        }),
+        (ShotPlan.from_dict, {"id": "p1"}),
+    ],
+)
+def test_from_dict_missing_required_fields_uses_validation_error(factory, data):
+    with pytest.raises(PlanningValidationError, match="missing required fields"):
+        factory(data)
