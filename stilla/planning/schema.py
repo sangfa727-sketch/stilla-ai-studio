@@ -204,7 +204,10 @@ class StoryboardDocument:
             frame_data = _strict_dict(
                 item, "storyboard frame",
                 {"id", "script_segment_id", "visual_description", "on_screen_text", "asset_prompt"},
-            )))
+            )
+            if not {"id", "script_segment_id", "visual_description"} <= set(frame_data):
+                raise PlanningValidationError("storyboard frame is missing required fields")
+            frames.append(StoryboardFrame(**frame_data))
         return cls(id=obj.get("id"), title=obj.get("title"), frames=tuple(frames))
 
 
