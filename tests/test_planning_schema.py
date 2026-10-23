@@ -100,3 +100,9 @@ def test_rejects_nonfinite_shot_duration():
 def test_from_dict_missing_required_fields_uses_validation_error(factory, data):
     with pytest.raises(PlanningValidationError, match="missing required fields"):
         factory(data)
+
+
+
+def test_rejects_extremely_large_integer_script_duration():
+    with pytest.raises(PlanningValidationError):
+        ScriptSegment("seg1", "Hello", estimated_duration_seconds=10**1000)
