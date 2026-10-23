@@ -4,6 +4,7 @@ These models are plain data only: they do not execute prompts, access providers,
 """
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -70,7 +71,7 @@ class CreativeBrief:
             raise PlanningValidationError("brief.target_duration_seconds must be an integer")
         if not 1 <= self.target_duration_seconds <= 86_400:
             raise PlanningValidationError("brief.target_duration_seconds must be between 1 and 86400")
-        if self.aspect_ratio not in {"16:9", "9:16", "1:1", "4:3", "3:2", "custom"}:
+        if not isinstance(self.aspect_ratio, str) or self.aspect_ratio not in {"16:9", "9:16", "1:1", "4:3", "3:2", "custom"}:
             raise PlanningValidationError("brief.aspect_ratio is unsupported")
         constraints = _items(self.constraints, "brief.constraints", maximum=100)
         for item in constraints:
@@ -108,7 +109,7 @@ class ScriptSegment:
         duration = self.estimated_duration_seconds
         if isinstance(duration, bool) or not isinstance(duration, (int, float)):
             raise PlanningValidationError("script segment duration must be a number")
-        if not 0 < duration <= 86_400:
+        if not math.isfinite(duration) or not 0 < duration <= 86_400:
             raise PlanningValidationError("script segment duration must be between 0 and 86400")
 
     def to_dict(self) -> dict[str, Any]:
