@@ -10,7 +10,12 @@ from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from stilla.ai.local_openai_compatible import LocalProviderConfig
-from stilla.ai.providers import ProviderConfig, ProviderConfigurationError, ProviderKind, select_provider
+from stilla.ai.providers import (
+    ProviderConfig,
+    ProviderConfigurationError,
+    ProviderKind,
+    select_provider,
+)
 
 _MAX_RESPONSE_BYTES = 1_048_576
 _MAX_REQUEST_BYTES = 256_000
