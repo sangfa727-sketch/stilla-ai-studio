@@ -8,7 +8,6 @@ from typing import Any
 
 from stilla.projects.schema import ProjectDocument, ProjectValidationError
 
-from __future__ import annotations
 
 
 MAX_PROJECT_BYTES = 10 * 1024 * 1024
