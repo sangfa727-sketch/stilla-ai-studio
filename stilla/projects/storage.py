@@ -8,8 +8,6 @@ from typing import Any
 
 from stilla.projects.schema import ProjectDocument, ProjectValidationError
 
-
-
 MAX_PROJECT_BYTES = 10 * 1024 * 1024
 PROJECT_SUFFIX = ".stilla.json"
 
