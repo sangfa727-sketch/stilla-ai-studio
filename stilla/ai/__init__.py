@@ -1,1 +1,1 @@
-"""AI provider contracts and adapters."""
+"""AI provider contracts and explicit provider configuration."""
