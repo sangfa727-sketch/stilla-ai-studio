@@ -1,5 +1,7 @@
 """Versioned, JSON-safe project document schema for STILLA."""
 
+from __future__ import annotations
+
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
