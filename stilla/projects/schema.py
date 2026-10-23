@@ -1,7 +1,5 @@
 """Versioned, JSON-safe project document schema for STILLA."""
 
-from __future__ import annotations
-
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -140,7 +138,7 @@ class ProjectDocument:
         }
 
     @classmethod
-    def from_dict(cls, data: object) -> "ProjectDocument":
+    def from_dict(cls, data: object) -> "ProjectDocument":  # noqa: UP037
         """Validate an untrusted JSON-like object and reject unknown top-level keys."""
         if not isinstance(data, dict):
             raise ProjectValidationError("project document must be an object")
