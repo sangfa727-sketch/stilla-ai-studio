@@ -75,7 +75,7 @@ class ProjectDocument:
     id: str
     name: str
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
-    updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     schema_version: int = CURRENT_SCHEMA_VERSION
     scenes: tuple[Scene, ...] = ()
     assets: tuple[AssetReference, ...] = ()
