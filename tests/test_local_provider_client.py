@@ -126,3 +126,21 @@ def test_empty_explicit_model_is_rejected_not_silently_replaced():
     with pytest.raises(ValueError, match="model must be"):
         client.chat([{"role": "user", "content": "Hi"}], model="")
     assert client._opener.requests == []
+
+
+def test_unhashable_message_role_fails_as_validation_error_before_request():
+    client = LocalOpenAICompatibleClient(ProviderConfig())
+    opener = FakeOpener([])
+    client._opener = opener
+
+    with pytest.raises(ValueError, match="message role or content is invalid"):
+        client.chat([{"role": [], "content": "Hi"}])
+    assert opener.requests == []
+
+
+def test_non_object_model_response_is_rejected_cleanly():
+    client = LocalOpenAICompatibleClient(ProviderConfig())
+    client._opener = FakeOpener([["unexpected", "array"]])
+
+    with pytest.raises(ProviderRequestError, match="invalid model list"):
+        client.list_models()
