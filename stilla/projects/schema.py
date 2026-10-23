@@ -5,8 +5,6 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-
-
 CURRENT_SCHEMA_VERSION = 1
 _MAX_SCENES = 10_000
 _MAX_ASSETS = 50_000
@@ -138,7 +136,7 @@ class ProjectDocument:
         }
 
     @classmethod
-    def from_dict(cls, data: object) -> "ProjectDocument":  # noqa: UP037
+    def from_dict(cls, data: object) -> "ProjectDocument":
         """Validate an untrusted JSON-like object and reject unknown top-level keys."""
         if not isinstance(data, dict):
             raise ProjectValidationError("project document must be an object")
