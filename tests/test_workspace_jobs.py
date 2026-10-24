@@ -127,6 +127,8 @@ def test_job_rejects_invalid_transitions_progress_and_duplicate_ids(tmp_path):
         jobs.transition("job1", "completed", result={})
     with pytest.raises(JobError):
         jobs.create("job1", "script", project_id="p1", input_data={})
+    with pytest.raises(JobError):
+        jobs.transition("job1", "running", progress=100)
     jobs.transition("job1", "running")
     jobs.update_progress("job1", 30)
     jobs.update_progress("job1", 50)
