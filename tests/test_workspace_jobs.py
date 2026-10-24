@@ -64,6 +64,34 @@ def test_workspace_refuses_symlink_project_file(tmp_path):
     assert json.loads(outside.read_text(encoding="utf-8")) == {"secret": True}
 
 
+def test_workspace_refuses_symlink_projects_parent(tmp_path):
+    root = tmp_path / "studio"
+    root.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (root / "projects").symlink_to(outside, target_is_directory=True)
+    workspace = ProjectWorkspace(root)
+    with pytest.raises(WorkspaceError, match="projects directory"):
+        workspace.create_project("p1", "Project")
+    assert list(outside.iterdir()) == []
+
+
+def test_workspace_refuses_symlink_documents_directory(tmp_path):
+    workspace = ProjectWorkspace(tmp_path / "studio")
+    workspace.create_project("p1", "Project")
+    project = tmp_path / "studio" / "projects" / "p1"
+    documents = project / "documents"
+    documents.rmdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    documents.symlink_to(outside, target_is_directory=True)
+    with pytest.raises(WorkspaceError, match="documents directory"):
+        workspace.save_document("p1", "brief", {"secret": True})
+    with pytest.raises(WorkspaceError, match="documents directory"):
+        workspace.load_document("p1", "brief")
+    assert list(outside.iterdir()) == []
+
+
 def test_job_state_transitions_persist_and_complete(tmp_path):
     jobs = JobStore(tmp_path / "jobs")
     created = jobs.create("job1", "script", project_id="project1", input_data={"brief": "hello"})
