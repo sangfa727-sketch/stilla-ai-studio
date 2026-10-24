@@ -8,6 +8,8 @@ from __future__ import annotations
 import json
 from typing import Protocol
 
+from stilla.ai.local_client import ProviderConnectionError
+from stilla.ai.providers import ProviderConfigurationError
 from stilla.planning.schema import CreativeBrief, PlanningValidationError, ScriptDocument
 
 _MAX_COMPLETION_CHARS = 256_000
@@ -72,8 +74,8 @@ def generate_script(
     messages = build_script_messages(brief)
     try:
         completion = client.chat(messages, model=model)
-    except Exception:
-        # Do not expose arbitrary provider exceptions, which may contain URLs or secrets.
+    except (ProviderConnectionError, ProviderConfigurationError, ValueError, TypeError, TimeoutError, OSError):
+        # Provider details can include URLs or secrets; expose only a safe diagnostic.
         raise ScriptPlanningError("Local script planning request failed") from None
     if not isinstance(completion, str) or not completion.strip():
         raise ScriptPlanningError("Provider returned an empty script")
