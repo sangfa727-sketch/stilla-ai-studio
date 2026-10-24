@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from stilla.ai.local_client import ProviderConnectionError
 from stilla.planning.schema import CreativeBrief
 from stilla.planning.script_planner import (
     ScriptPlanningError,
@@ -88,7 +89,7 @@ def test_generate_script_rejects_oversized_completion(brief):
 
 
 def test_provider_errors_are_sanitized(brief):
-    client = FakeClient(error=RuntimeError("secret token at https://secret.example/key"))
+    client = FakeClient(error=ProviderConnectionError("secret token at https://secret.example/key"))
     with pytest.raises(ScriptPlanningError, match="request failed") as exc:
         generate_script(brief, client, script_id="draft1")
     assert "secret.example" not in str(exc.value)
