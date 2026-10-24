@@ -1,13 +1,14 @@
 """Persistent, guarded job lifecycle for local generation and render tasks."""
 from __future__ import annotations
 
+import json
 import re
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from stilla.media.workspace import ProjectWorkspace, WorkspaceError, _atomic_write, _json_bytes
+from stilla.media.workspace import WorkspaceError, _atomic_write, _json_bytes
 
 _JOB_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 _STATES = {"queued", "running", "completed", "failed", "cancelled"}
@@ -26,7 +27,7 @@ class JobError(ValueError):
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 class JobStore:
@@ -78,7 +79,6 @@ class JobStore:
         if path.is_symlink() or not path.is_file():
             raise JobError("job does not exist or is unsafe")
         try:
-            import json
             with path.open("rb") as stream:
                 raw = stream.read(2_000_001)
             if len(raw) > 2_000_000:
@@ -86,7 +86,7 @@ class JobStore:
             record = json.loads(raw.decode("utf-8"))
         except JobError:
             raise
-        except Exception:
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError, RecursionError):
             raise JobError("job record is invalid") from None
         if not isinstance(record, dict) or record.get("id") != job_id or record.get("state") not in _STATES:
             raise JobError("job record is invalid")
@@ -96,7 +96,7 @@ class JobStore:
         self, job_id: str, state: str, *, progress: int | None = None,
         result: dict[str, Any] | None = None, error: str | None = None,
     ) -> dict[str, Any]:
-        if state not in _STATES:
+        if not isinstance(state, str) or state not in _STATES:
             raise JobError("unsupported job state")
         if progress is not None and (isinstance(progress, bool) or not isinstance(progress, int) or not 0 <= progress <= 100):
             raise JobError("progress must be an integer from 0 to 100")
