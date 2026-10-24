@@ -68,11 +68,11 @@ def generate_script(
     if not isinstance(brief, CreativeBrief):
         raise TypeError("brief must be a validated CreativeBrief")
     if not isinstance(script_id, str) or not script_id.strip():
-        raise ValueError("script_id must be a non-empty safe identifier")
+        raise ScriptPlanningError("script_id must be a non-empty safe identifier")
     messages = build_script_messages(brief)
     try:
         completion = client.chat(messages, model=model)
-    except Exception as exc:
+    except Exception:
         # Do not expose arbitrary provider exceptions, which may contain URLs or secrets.
         raise ScriptPlanningError("Local script planning request failed") from None
     if not isinstance(completion, str) or not completion.strip():
