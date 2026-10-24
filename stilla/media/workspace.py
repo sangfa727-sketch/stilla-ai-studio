@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
@@ -67,13 +68,29 @@ class ProjectWorkspace:
         self.root = Path(root).expanduser().resolve()
         self.root.mkdir(parents=True, exist_ok=True)
 
+    def _projects_dir(self) -> Path:
+        path = self.root / "projects"
+        if path.is_symlink():
+            raise WorkspaceError("projects directory must not be a symbolic link")
+        return path
+
     def _project_dir(self, project_id: str) -> Path:
         _identifier(project_id, "project_id")
-        path = self.root / "projects" / project_id
+        projects = self._projects_dir()
+        path = projects / project_id
         if path.is_symlink():
             raise WorkspaceError("project directory must not be a symbolic link")
-        if not path.resolve().is_relative_to((self.root / "projects").resolve()):
+        if not path.resolve().is_relative_to(projects.resolve()):
             raise WorkspaceError("project path escapes workspace")
+        return path
+
+    @staticmethod
+    def _documents_dir(project: Path) -> Path:
+        path = project / "documents"
+        if path.is_symlink() or not path.is_dir():
+            raise WorkspaceError("project documents directory is missing or unsafe")
+        if not path.resolve().is_relative_to(project.resolve()):
+            raise WorkspaceError("documents path escapes project")
         return path
 
     def create_project(self, project_id: str, title: str, *, language: str = "en") -> dict[str, Any]:
@@ -94,19 +111,14 @@ class ProjectWorkspace:
         try:
             _atomic_write(project_dir / "project.json", _json_bytes(metadata))
             (project_dir / "documents").mkdir()
-        except OSError:
+        except (OSError, WorkspaceError):
             # Remove only the directory created by this call; never overwrite existing work.
-            import shutil
-            shutil.rmtree(project_dir, ignore_errors=True)
-            raise
-        except WorkspaceError:
-            import shutil
             shutil.rmtree(project_dir, ignore_errors=True)
             raise
         return metadata
 
     def list_projects(self) -> list[dict[str, Any]]:
-        parent = self.root / "projects"
+        parent = self._projects_dir()
         if not parent.exists():
             return []
         projects = []
@@ -127,12 +139,12 @@ class ProjectWorkspace:
         return value
 
     def save_document(self, project_id: str, name: str, value: Any) -> None:
-        _identifier(project_id, "project_id")
         _identifier(name, "document name", _NAME)
         project = self._project_dir(project_id)
         if not project.is_dir():
             raise WorkspaceError("project does not exist")
-        path = project / "documents" / f"{name}.json"
+        documents = self._documents_dir(project)
+        path = documents / f"{name}.json"
         _atomic_write(path, _json_bytes(value))
         metadata = self.load_project(project_id)
         metadata["updated_at"] = _now()
@@ -143,7 +155,8 @@ class ProjectWorkspace:
         project = self._project_dir(project_id)
         if not project.is_dir():
             raise WorkspaceError("project does not exist")
-        return self._read_json(project / "documents" / f"{name}.json")
+        documents = self._documents_dir(project)
+        return self._read_json(documents / f"{name}.json")
 
     @staticmethod
     def _read_json(path: Path) -> Any:
