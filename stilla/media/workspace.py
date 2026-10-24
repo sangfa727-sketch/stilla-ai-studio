@@ -9,7 +9,7 @@ import json
 import os
 import re
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +29,7 @@ def _identifier(value: str, field: str, pattern: re.Pattern[str] = _ID) -> str:
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _json_bytes(value: Any) -> bytes:
@@ -94,8 +94,12 @@ class ProjectWorkspace:
         try:
             _atomic_write(project_dir / "project.json", _json_bytes(metadata))
             (project_dir / "documents").mkdir()
-        except Exception:
+        except OSError:
             # Remove only the directory created by this call; never overwrite existing work.
+            import shutil
+            shutil.rmtree(project_dir, ignore_errors=True)
+            raise
+        except WorkspaceError:
             import shutil
             shutil.rmtree(project_dir, ignore_errors=True)
             raise
