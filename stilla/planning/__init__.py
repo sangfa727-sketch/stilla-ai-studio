@@ -1,4 +1,4 @@
-"""Creative planning schemas for STILLA AI Studio."""
+"""Creative planning schemas and local script-planning service for STILLA AI Studio."""
 from stilla.planning.schema import (
     CreativeBrief,
     PlanningValidationError,
@@ -9,8 +9,22 @@ from stilla.planning.schema import (
     StoryboardDocument,
     StoryboardFrame,
 )
+from stilla.planning.script_planner import (
+    ScriptPlanningError,
+    build_script_messages,
+    generate_script,
+)
 
 __all__ = [
-    "CreativeBrief", "PlanningValidationError", "ScriptDocument", "ScriptSegment",
-    "Shot", "ShotPlan", "StoryboardDocument", "StoryboardFrame",
+    "CreativeBrief",
+    "PlanningValidationError",
+    "ScriptDocument",
+    "ScriptSegment",
+    "ScriptPlanningError",
+    "Shot",
+    "ShotPlan",
+    "StoryboardDocument",
+    "StoryboardFrame",
+    "build_script_messages",
+    "generate_script",
 ]
