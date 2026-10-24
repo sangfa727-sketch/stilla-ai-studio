@@ -12,7 +12,6 @@ from stilla.media.workspace import WorkspaceError, _atomic_write, _json_bytes
 
 _JOB_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 _STATES = {"queued", "running", "completed", "failed", "cancelled"}
-_TERMINAL = {"completed", "failed", "cancelled"}
 _ALLOWED = {
     "queued": {"running", "cancelled"},
     "running": {"completed", "failed", "cancelled"},
@@ -90,6 +89,11 @@ class JobStore:
             raise JobError("job record is invalid") from None
         if not isinstance(record, dict) or record.get("id") != job_id or record.get("state") not in _STATES:
             raise JobError("job record is invalid")
+        progress = record.get("progress")
+        if isinstance(progress, bool) or not isinstance(progress, int) or not 0 <= progress <= 100:
+            raise JobError("job record has invalid progress")
+        if record["state"] == "running" and progress > 99:
+            raise JobError("running job progress must be below 100")
         return record
 
     def transition(
@@ -100,6 +104,8 @@ class JobStore:
             raise JobError("unsupported job state")
         if progress is not None and (isinstance(progress, bool) or not isinstance(progress, int) or not 0 <= progress <= 100):
             raise JobError("progress must be an integer from 0 to 100")
+        if state == "running" and progress == 100:
+            raise JobError("running jobs must have progress below 100")
         if error is not None and (not isinstance(error, str) or len(error) > 2_000):
             raise JobError("error must be text of at most 2000 characters")
         if result is not None and not isinstance(result, dict):
