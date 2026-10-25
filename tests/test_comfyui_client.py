@@ -44,7 +44,7 @@ def test_submit_workflow_posts_to_local_prompt_endpoint(monkeypatch):
 def test_rejects_oversized_workflow_before_network(monkeypatch):
     monkeypatch.setattr("stilla.ai.comfyui_client.build_opener", lambda handler: pytest.fail("network called"))
     with pytest.raises(ValueError, match="2 MiB"):
-        ComfyUIClient(ComfyUIConfig()).submit_workflow({"prompt": "x" * (2 * 1024 * 1024)})
+        ComfyUIClient(ComfyUIConfig()).submit_workflow({"1": {"class_type": "KSampler", "inputs": {"prompt": "x" * (2 * 1024 * 1024)}}})
 
 
 def test_rejects_invalid_prompt_id():
@@ -68,5 +68,63 @@ def test_sanitizes_connection_errors(monkeypatch):
 
     monkeypatch.setattr("stilla.ai.comfyui_client.build_opener", lambda handler: Opener())
     with pytest.raises(ComfyUIClientError, match="Could not communicate") as error:
-        ComfyUIClient(ComfyUIConfig()).submit_workflow({"1": {"class_type": "KSampler"}})
+        ComfyUIClient(ComfyUIConfig()).submit_workflow({"1": {"class_type": "KSampler", "inputs": {}}})
     assert "secret" not in str(error.value)
+
+
+@pytest.mark.parametrize(
+    "workflow",
+    [
+        {},
+        {"1": "not-a-node"},
+        {"1": {"inputs": {}}},
+        {"1": {"class_type": "KSampler"}},
+        {"../bad": {"class_type": "KSampler", "inputs": {}}},
+        {"1": {"class_type": "KSampler", "inputs": {"value": float("nan")}}},
+    ],
+)
+def test_rejects_malformed_workflow_before_network(monkeypatch, workflow):
+    monkeypatch.setattr(
+        "stilla.ai.comfyui_client.build_opener",
+        lambda handler: pytest.fail("network called"),
+    )
+    with pytest.raises((ValueError, TypeError)):
+        ComfyUIClient(ComfyUIConfig()).submit_workflow(workflow)
+
+
+def test_rejects_oversized_http_response(monkeypatch):
+    class OversizedResponse(FakeResponse):
+        def __init__(self):
+            self.payload = b'{"ok":true}'
+            self.headers = {}
+
+        def read(self, limit):
+            return b"x" * limit
+
+    class Opener:
+        def open(self, request, timeout):
+            return OversizedResponse()
+
+    monkeypatch.setattr("stilla.ai.comfyui_client.build_opener", lambda handler: Opener())
+    config = ComfyUIConfig(max_response_bytes=64)
+    with pytest.raises(ComfyUIClientError, match="size limit"):
+        ComfyUIClient(config).submit_workflow(
+            {"1": {"class_type": "KSampler", "inputs": {}}}
+        )
+
+
+def test_rejects_invalid_content_length(monkeypatch):
+    class InvalidLengthResponse(FakeResponse):
+        def __init__(self):
+            super().__init__({"prompt_id": "12345678-abcd"})
+            self.headers = {"Content-Length": "not-a-number"}
+
+    class Opener:
+        def open(self, request, timeout):
+            return InvalidLengthResponse()
+
+    monkeypatch.setattr("stilla.ai.comfyui_client.build_opener", lambda handler: Opener())
+    with pytest.raises(ComfyUIClientError, match="invalid response metadata"):
+        ComfyUIClient(ComfyUIConfig()).submit_workflow(
+            {"1": {"class_type": "KSampler", "inputs": {}}}
+        )

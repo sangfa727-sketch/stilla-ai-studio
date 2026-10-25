@@ -20,6 +20,7 @@ class _NoRedirect(HTTPRedirectHandler):
 
 
 _CLIENT_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+_NODE_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 _PROMPT_ID = re.compile(r"^[A-Fa-f0-9-]{8,128}$")
 _MAX_WORKFLOW_BYTES = 2 * 1024 * 1024
 
@@ -35,25 +36,56 @@ class ComfyUIClient:
         self._config = config
         self._client_id = client_id
 
+    @staticmethod
+    def _validate_workflow(workflow: object) -> dict[str, object]:
+        if not isinstance(workflow, dict) or not workflow:
+            raise ValueError("workflow must be a non-empty object")
+        for node_id, node in workflow.items():
+            if not isinstance(node_id, str) or not _NODE_ID.fullmatch(node_id):
+                raise ValueError("workflow node IDs must be safe strings")
+            if not isinstance(node, dict):
+                raise TypeError("each workflow node must be an object")
+            class_type = node.get("class_type")
+            if not isinstance(class_type, str) or not class_type.strip() or len(class_type) > 256:
+                raise ValueError("each workflow node must have a valid class_type")
+            inputs = node.get("inputs")
+            if not isinstance(inputs, dict):
+                raise TypeError("each workflow node must have an inputs object")
+        try:
+            encoded = json.dumps(workflow, separators=(",", ":"), allow_nan=False).encode("utf-8")
+        except (TypeError, ValueError, RecursionError) as exc:
+            raise ValueError("workflow must contain JSON-compatible values") from exc
+        if len(encoded) > _MAX_WORKFLOW_BYTES:
+            raise ValueError("workflow exceeds the 2 MiB limit")
+        return workflow
+
     def _request_json(self, method: str, path: str, body: bytes | None = None) -> object:
         request = Request(
-            f"{self._config.base_url}/{path}", data=body,
-            headers={"Accept": "application/json", "Content-Type": "application/json",
-                     "User-Agent": "STILLA-AI-Studio-local-client"}, method=method,
+            f"{self._config.base_url}/{path}",
+            data=body,
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "User-Agent": "STILLA-AI-Studio-local-client",
+            },
+            method=method,
         )
         try:
             with build_opener(_NoRedirect).open(request, timeout=self._config.timeout_seconds) as response:
                 if response.getcode() != 200:
                     raise ComfyUIClientError("Local ComfyUI returned a non-success status")
                 length = response.headers.get("Content-Length")
-                if length:
+                if length is not None:
                     try:
-                        if not 0 <= int(length) <= self._config.max_response_bytes:
-                            raise ComfyUIClientError("Local ComfyUI response exceeds configured size limit")
-                    except ValueError as exc:
-                        if isinstance(exc, ComfyUIClientError):
-                            raise
-                        raise ComfyUIClientError("Local ComfyUI returned invalid response metadata") from exc
+                        parsed_length = int(length)
+                    except (TypeError, ValueError) as exc:
+                        raise ComfyUIClientError(
+                            "Local ComfyUI returned invalid response metadata"
+                        ) from exc
+                    if not 0 <= parsed_length <= self._config.max_response_bytes:
+                        raise ComfyUIClientError(
+                            "Local ComfyUI response exceeds configured size limit"
+                        )
                 payload = response.read(self._config.max_response_bytes + 1)
         except ComfyUIClientError:
             raise
@@ -67,17 +99,13 @@ class ComfyUIClient:
             raise ComfyUIClientError("Local ComfyUI returned invalid JSON") from exc
 
     def submit_workflow(self, workflow: dict[str, object]) -> str:
-        """Submit a bounded JSON workflow and return its validated prompt ID."""
-        if not isinstance(workflow, dict) or not workflow:
-            raise ValueError("workflow must be a non-empty object")
-        try:
-            encoded = json.dumps(workflow, separators=(",", ":"), allow_nan=False).encode("utf-8")
-        except (TypeError, ValueError) as exc:
-            raise ValueError("workflow must contain JSON-compatible values") from exc
-        if len(encoded) > _MAX_WORKFLOW_BYTES:
-            raise ValueError("workflow exceeds the 2 MiB limit")
-        payload = json.dumps({"prompt": workflow, "client_id": self._client_id},
-                             separators=(",", ":"), allow_nan=False).encode("utf-8")
+        """Validate and submit a bounded workflow, returning its prompt ID."""
+        validated = self._validate_workflow(workflow)
+        payload = json.dumps(
+            {"prompt": validated, "client_id": self._client_id},
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
         result = self._request_json("POST", "prompt", payload)
         if not isinstance(result, dict):
             raise ComfyUIClientError("Local ComfyUI returned an unsupported workflow response")
