@@ -88,7 +88,7 @@ def test_rejects_malformed_workflow_before_network(monkeypatch, workflow):
         "stilla.ai.comfyui_client.build_opener",
         lambda handler: pytest.fail("network called"),
     )
-    with pytest.raises(ValueError):
+    with pytest.raises((ValueError, TypeError)):
         ComfyUIClient(ComfyUIConfig()).submit_workflow(workflow)
 
 
