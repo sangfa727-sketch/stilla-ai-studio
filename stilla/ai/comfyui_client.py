@@ -44,13 +44,13 @@ class ComfyUIClient:
             if not isinstance(node_id, str) or not _NODE_ID.fullmatch(node_id):
                 raise ValueError("workflow node IDs must be safe strings")
             if not isinstance(node, dict):
-                raise ValueError("each workflow node must be an object")
+                raise TypeError("each workflow node must be an object")
             class_type = node.get("class_type")
             if not isinstance(class_type, str) or not class_type.strip() or len(class_type) > 256:
                 raise ValueError("each workflow node must have a valid class_type")
             inputs = node.get("inputs")
             if not isinstance(inputs, dict):
-                raise ValueError("each workflow node must have an inputs object")
+                raise TypeError("each workflow node must have an inputs object")
         try:
             encoded = json.dumps(workflow, separators=(",", ":"), allow_nan=False).encode("utf-8")
         except (TypeError, ValueError, RecursionError) as exc:
