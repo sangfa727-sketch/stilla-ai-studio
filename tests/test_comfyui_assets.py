@@ -6,7 +6,7 @@ from stilla.ai.comfyui_config import ComfyUIConfig
 from stilla.media.workspace import ProjectWorkspace
 
 
-PNG = b"\\x89PNG\\r\\n\\x1a\\n" + b"minimal-image-payload"
+PNG = b"\x89PNG\r\n\x1a\n" + b"minimal-image-payload"
 
 
 class FakeResponse:
