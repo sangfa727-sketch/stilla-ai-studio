@@ -6,10 +6,10 @@ import os
 import re
 import tempfile
 from pathlib import Path
+from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import HTTPRedirectHandler, Request, build_opener
-from typing import Any
 
 from stilla.ai.comfyui_config import ComfyUIConfig
 from stilla.media.workspace import ProjectWorkspace, WorkspaceError
