@@ -41,12 +41,14 @@ class ComfyUIAssetStore:
         config: ComfyUIConfig,
         workspace: ProjectWorkspace,
         *,
-        max_asset_bytes: int = 10_485_760,
+        max_asset_bytes: int | None = None,
     ) -> None:
         if not isinstance(config, ComfyUIConfig):
             raise TypeError("A validated ComfyUIConfig is required")
         if not isinstance(workspace, ProjectWorkspace):
             raise TypeError("A ProjectWorkspace is required")
+        if max_asset_bytes is None:
+            max_asset_bytes = min(10_485_760, config.max_response_bytes)
         if (
             isinstance(max_asset_bytes, bool)
             or not isinstance(max_asset_bytes, int)
