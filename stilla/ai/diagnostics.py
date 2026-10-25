@@ -41,14 +41,16 @@ def diagnose_local_provider(config: ProviderConfig, client: ModelLister) -> Prov
     The base URL is shown only after validation has restricted the provider to loopback.
     Errors are reduced to safe status text and never include response bodies or secrets.
     """
-    selected = select_provider(config)
-    if selected.kind is not ProviderKind.LOCAL_OPENAI_COMPATIBLE:
+    if not isinstance(config, ProviderConfig):
+        raise TypeError("A validated ProviderConfig is required")
+    if config.kind is not ProviderKind.LOCAL_OPENAI_COMPATIBLE:
         raise ValueError("Diagnostics currently support only the local provider")
-    if not selected.enabled:
+    if not config.enabled:
         return ProviderDiagnostics(
-            configured=False, reachable=False, provider_kind=selected.kind.value,
-            base_url=selected.base_url, message="Local provider is disabled",
+            configured=False, reachable=False, provider_kind=config.kind.value,
+            base_url=config.base_url, message="Local provider is disabled",
         )
+    selected = select_provider(config)
     try:
         discovered = client.list_models()
     except (ProviderConnectionError, TimeoutError, OSError, ValueError):
