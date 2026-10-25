@@ -1,12 +1,12 @@
 import pytest
 
-from stilla.ai import comfyui_assets
 from stilla.ai.comfyui_assets import ComfyUIAssetError, ComfyUIAssetStore
 from stilla.ai.comfyui_config import ComfyUIConfig
+from stilla.ai import comfyui_assets
 from stilla.media.workspace import ProjectWorkspace
 
 
-PNG = b"\x89PNG\r\n\x1a\n" + b"minimal-image-payload"
+PNG = b"\\x89PNG\\r\\n\\x1a\\n" + b"minimal-image-payload"
 
 
 class FakeResponse:
