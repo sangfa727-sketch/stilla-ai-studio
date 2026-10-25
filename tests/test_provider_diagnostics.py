@@ -48,6 +48,14 @@ def test_diagnostics_reports_empty_model_list():
     assert "no models" in result.message
 
 
+def test_disabled_local_provider_returns_status_without_network_call():
+    client = FakeClient(["should-not-be-requested"])
+    result = diagnose_local_provider(ProviderConfig(enabled=False), client)
+    assert not result.configured and not result.reachable
+    assert result.message == "Local provider is disabled"
+    assert client.calls == 0
+
+
 def test_diagnostics_refuses_remote_provider():
     config = ProviderConfig(
         kind=ProviderKind.REMOTE_API,
