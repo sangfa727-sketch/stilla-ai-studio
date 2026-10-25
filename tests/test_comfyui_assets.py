@@ -1,7 +1,6 @@
 import pytest
 
-from stilla.ai import comfyui_assets
-from stilla.ai.comfyui_assets import ComfyUIAssetError, ComfyUIAssetStore
+import stilla.ai.comfyui_assets as comfyui_assets
 from stilla.ai.comfyui_config import ComfyUIConfig
 from stilla.media.workspace import ProjectWorkspace
 
@@ -46,7 +45,7 @@ def test_saves_valid_image_into_project_assets(monkeypatch, tmp_path):
             return FakeResponse()
 
     monkeypatch.setattr(comfyui_assets, "build_opener", lambda handler: Opener())
-    path = ComfyUIAssetStore(ComfyUIConfig(), workspace).save_image(
+    path = comfyui_assets.ComfyUIAssetStore(ComfyUIConfig(), workspace).save_image(
         "project1", "shot_1", {"filename": "ComfyUI_00001_.png", "subfolder": "", "type": "output"}
     )
     assert path == tmp_path / "studio/projects/project1/assets/shot_1.png"
@@ -68,7 +67,7 @@ def test_rejects_unsafe_image_references_before_network(monkeypatch, tmp_path, r
     workspace = make_workspace(tmp_path)
     monkeypatch.setattr(comfyui_assets, "build_opener", lambda handler: pytest.fail("network called"))
     with pytest.raises((ValueError, TypeError)):
-        ComfyUIAssetStore(ComfyUIConfig(), workspace).save_image("project1", "shot1", reference)
+        comfyui_assets.ComfyUIAssetStore(ComfyUIConfig(), workspace).save_image("project1", "shot1", reference)
 
 
 def test_rejects_non_image_payload(tmp_path, monkeypatch):
@@ -79,8 +78,8 @@ def test_rejects_non_image_payload(tmp_path, monkeypatch):
             return FakeResponse(b"<html>not image</html>", "text/html")
 
     monkeypatch.setattr(comfyui_assets, "build_opener", lambda handler: Opener())
-    with pytest.raises(ComfyUIAssetError, match="unsupported or invalid image"):
-        ComfyUIAssetStore(ComfyUIConfig(), workspace).save_image(
+    with pytest.raises(comfyui_assets.ComfyUIAssetError, match="unsupported or invalid image"):
+        comfyui_assets.ComfyUIAssetStore(ComfyUIConfig(), workspace).save_image(
             "project1", "shot1", {"filename": "bad.png"}
         )
     assert not (tmp_path / "studio/projects/project1/assets").exists()
@@ -94,8 +93,8 @@ def test_rejects_oversized_image_before_writing(tmp_path, monkeypatch):
             return FakeResponse(PNG * 10, "image/png", {"Content-Length": "1000", "Content-Type": "image/png"})
 
     monkeypatch.setattr(comfyui_assets, "build_opener", lambda handler: Opener())
-    with pytest.raises(ComfyUIAssetError, match="size limit"):
-        ComfyUIAssetStore(ComfyUIConfig(max_response_bytes=128), workspace, max_asset_bytes=64).save_image(
+    with pytest.raises(comfyui_assets.ComfyUIAssetError, match="size limit"):
+        comfyui_assets.ComfyUIAssetStore(ComfyUIConfig(max_response_bytes=128), workspace, max_asset_bytes=64).save_image(
             "project1", "shot1", {"filename": "large.png"}
         )
 
@@ -108,17 +107,17 @@ def test_refuses_to_overwrite_existing_asset(tmp_path, monkeypatch):
             return FakeResponse()
 
     monkeypatch.setattr(comfyui_assets, "build_opener", lambda handler: Opener())
-    store = ComfyUIAssetStore(ComfyUIConfig(), workspace)
+    store = comfyui_assets.ComfyUIAssetStore(ComfyUIConfig(), workspace)
     store.save_image("project1", "shot1", {"filename": "image.png"})
-    with pytest.raises(ComfyUIAssetError, match="overwrite"):
+    with pytest.raises(comfyui_assets.ComfyUIAssetError, match="overwrite"):
         store.save_image("project1", "shot1", {"filename": "image.png"})
 
 
 def test_rejects_missing_project_before_network(monkeypatch, tmp_path):
     workspace = ProjectWorkspace(tmp_path / "studio")
     monkeypatch.setattr(comfyui_assets, "build_opener", lambda handler: pytest.fail("network called"))
-    with pytest.raises(ComfyUIAssetError, match="Project"):
-        ComfyUIAssetStore(ComfyUIConfig(), workspace).save_image(
+    with pytest.raises(comfyui_assets.ComfyUIAssetError, match="Project"):
+        comfyui_assets.ComfyUIAssetStore(ComfyUIConfig(), workspace).save_image(
             "missing", "shot1", {"filename": "image.png"}
         )
 
@@ -135,8 +134,8 @@ def test_rejects_symlink_assets_directory(tmp_path, monkeypatch):
             return FakeResponse()
 
     monkeypatch.setattr(comfyui_assets, "build_opener", lambda handler: Opener())
-    with pytest.raises(ComfyUIAssetError, match="assets directory"):
-        ComfyUIAssetStore(ComfyUIConfig(), workspace).save_image(
+    with pytest.raises(comfyui_assets.ComfyUIAssetError, match="assets directory"):
+        comfyui_assets.ComfyUIAssetStore(ComfyUIConfig(), workspace).save_image(
             "project1", "shot1", {"filename": "image.png"}
         )
     assert list(outside.iterdir()) == []
