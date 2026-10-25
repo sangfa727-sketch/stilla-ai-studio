@@ -1,7 +1,7 @@
 import pytest
 
-from stilla.ai import comfyui_assets
 from stilla.ai.comfyui_config import ComfyUIConfig
+from stilla.ai import comfyui_assets
 from stilla.media.workspace import ProjectWorkspace
 
 
