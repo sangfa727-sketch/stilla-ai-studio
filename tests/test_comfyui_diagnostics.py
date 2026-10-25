@@ -3,8 +3,8 @@ from urllib.error import URLError
 
 import pytest
 
-from stilla.ai.comfyui_config import ComfyUIConfig
 from stilla.ai import comfyui_diagnostics as diagnostics
+from stilla.ai.comfyui_config import ComfyUIConfig
 
 
 class FakeResponse:
