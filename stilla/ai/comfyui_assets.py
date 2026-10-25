@@ -81,6 +81,14 @@ class ComfyUIAssetStore:
         if not isinstance(asset_id, str) or not _ASSET_ID.fullmatch(asset_id):
             raise ValueError("asset_id must be a safe identifier")
         reference = self._validate_reference(image)
+        project = self._workspace.root / "projects" / project_id
+        try:
+            metadata = self._workspace.load_project(project_id)
+            del metadata
+        except WorkspaceError as exc:
+            raise ComfyUIAssetError("Project does not exist or is unsafe") from exc
+        if project.is_symlink() or not project.is_dir() or not project.resolve().is_relative_to(self._workspace.root.resolve() / "projects"):
+            raise ComfyUIAssetError("Project path is unsafe")
         query = urlencode(reference)
         request = Request(
             f"{self._config.base_url}/view?{query}",
@@ -113,14 +121,6 @@ class ComfyUIAssetStore:
         if content_type == "image/webp" and (len(payload) < 12 or payload[8:12] != b"WEBP"):
             raise ComfyUIAssetError("Local ComfyUI returned an invalid WebP image")
 
-        project = self._workspace.root / "projects" / project_id
-        try:
-            metadata = self._workspace.load_project(project_id)
-            del metadata
-        except WorkspaceError as exc:
-            raise ComfyUIAssetError("Project does not exist or is unsafe") from exc
-        if project.is_symlink() or not project.is_dir() or not project.resolve().is_relative_to(self._workspace.root.resolve() / "projects"):
-            raise ComfyUIAssetError("Project path is unsafe")
         assets = project / "assets"
         if assets.is_symlink():
             raise ComfyUIAssetError("Project assets directory is unsafe")
