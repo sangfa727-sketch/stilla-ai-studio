@@ -68,7 +68,7 @@ def test_sanitizes_connection_errors(monkeypatch):
 
     monkeypatch.setattr("stilla.ai.comfyui_client.build_opener", lambda handler: Opener())
     with pytest.raises(ComfyUIClientError, match="Could not communicate") as error:
-        ComfyUIClient(ComfyUIConfig()).submit_workflow({"1": {"class_type": "KSampler"}})
+        ComfyUIClient(ComfyUIConfig()).submit_workflow({"1": {"class_type": "KSampler", "inputs": {}}})
     assert "secret" not in str(error.value)
 
 
