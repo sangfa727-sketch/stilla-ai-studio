@@ -68,7 +68,7 @@ class ComfyUIAssetStore:
             raise ValueError("image filename is invalid")
         if not isinstance(subfolder, str) or (subfolder and not _SUBFOLDER.fullmatch(subfolder)):
             raise ValueError("image subfolder is invalid")
-        if any(part in {"", ".", ".."} for part in subfolder.split("/")):
+        if subfolder and any(part in {"", ".", ".."} for part in subfolder.split("/")):
             raise ValueError("image subfolder contains an unsafe path segment")
         if image_type not in {"output", "temp", "input"}:
             raise ValueError("image type is invalid")
