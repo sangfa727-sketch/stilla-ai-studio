@@ -133,6 +133,43 @@ class DesktopWorkspaceAPI:
                 raise DesktopAPIError("Could not save character profile") from None
         return {"saved": True, "character_id": profile.id, "file": target.name}
 
+    def list_character_profiles(self, project_id: str) -> list[dict[str, Any]]:
+        project = self._require_project(project_id)
+        directory = project / "characters"
+        self._safe_directory(directory, project)
+        profiles: list[dict[str, Any]] = []
+        with self._lock:
+            for path in sorted(directory.glob("*.character.json")):
+                if path.is_symlink() or not path.is_file():
+                    continue
+                character_id = path.name.removesuffix(".character.json")
+                if not _CHARACTER_ID.fullmatch(character_id):
+                    continue
+                try:
+                    profiles.append(load_character(directory, character_id).to_dict())
+                except (OSError, CharacterStorageError):
+                    # A corrupt profile is skipped, never silently rewritten.
+                    continue
+        return profiles
+
+    def delete_character_profile(self, project_id: str, character_id: str) -> dict[str, Any]:
+        project = self._require_project(project_id)
+        if not isinstance(character_id, str) or not _CHARACTER_ID.fullmatch(character_id):
+            raise DesktopAPIError("Invalid character identifier")
+        directory = project / "characters"
+        self._safe_directory(directory, project)
+        target = directory / f"{character_id}.character.json"
+        with self._lock:
+            if target.is_symlink():
+                raise DesktopAPIError("Character profile path is unsafe")
+            try:
+                target.unlink()
+            except FileNotFoundError:
+                raise DesktopAPIError("Character profile does not exist") from None
+            except OSError:
+                raise DesktopAPIError("Could not delete character profile") from None
+        return {"deleted": True, "character_id": character_id}
+
     def load_character_profile(self, project_id: str, character_id: str) -> dict[str, Any]:
         project = self._require_project(project_id)
         if not isinstance(character_id, str) or not _CHARACTER_ID.fullmatch(character_id):
