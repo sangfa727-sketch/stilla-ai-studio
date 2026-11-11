@@ -52,8 +52,11 @@ def build_generation_plan(
     override = _scene_text(outfit_override, "outfit_override")
     if override and not allow_costume_change:
         raise CharacterProfileError("costume change requires explicit allow_costume_change=True")
-    if seed is not None and (isinstance(seed, bool) or not isinstance(seed, int)
-                             or not 0 <= seed <= 2**32 - 1):
+    selected_seed = character.canonical_seed if seed is None else seed
+    if selected_seed is not None and (
+        isinstance(selected_seed, bool) or not isinstance(selected_seed, int)
+        or not 0 <= selected_seed <= 2**32 - 1
+    ):
         raise CharacterProfileError("seed must be an unsigned 32-bit integer")
 
     visual = character.visual
@@ -87,8 +90,14 @@ def build_generation_plan(
 
     personality = character.personality
     behavior = []
+    if personality.archetype:
+        behavior.append("Personality archetype: " + personality.archetype + ".")
     if personality.core_traits:
         behavior.append("Character behavior: " + ", ".join(personality.core_traits) + ".")
+    if personality.strength:
+        behavior.append("Character strength: " + personality.strength + ".")
+    if personality.catchphrase:
+        behavior.append("Catchphrase: " + personality.catchphrase + ".")
     if personality.humor_mechanics:
         behavior.append("Original comedy mechanics: " + ", ".join(personality.humor_mechanics) + ".")
     for label, value in (
@@ -100,6 +109,11 @@ def build_generation_plan(
     ):
         if value:
             behavior.append(f"{label}: {value}.")
+    if personality.avoid:
+        behavior.append("Avoid these behavior patterns: " + ", ".join(personality.avoid) + ".")
+    if character.voice_description:
+        behavior.append("Voice design: " + character.voice_description + ".")
+    behavior.append("Dialogue language: " + character.language + ".")
     prompt = " ".join(fixed + behavior)
     negative = (
         "character redesign, different face, different eye shape, altered silhouette, "
@@ -109,12 +123,12 @@ def build_generation_plan(
     )
     refs = tuple(ref.relative_path for ref in character.references)
     key_material = "|".join((character.identity_fingerprint, scene, pose_text, expression_text,
-                             override, str(seed if seed is not None else "")))
+                             override, str(selected_seed if selected_seed is not None else "")))
     consistency_key = hashlib.sha256(key_material.encode("utf-8")).hexdigest()
     locked = ("silhouette", "body_proportions", "face_shape", "eyes", "primary_colors",
               "outfit", "accessories", "distinguishing_marks", "art_style")
     return CharacterGenerationPlan(
         prompt=prompt, negative_prompt=negative, reference_paths=refs,
         identity_fingerprint=character.identity_fingerprint,
-        consistency_key=consistency_key, seed=seed, locked_fields=locked,
+        consistency_key=consistency_key, seed=selected_seed, locked_fields=locked,
     )
