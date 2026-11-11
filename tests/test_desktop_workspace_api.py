@@ -102,3 +102,57 @@ def test_reference_import_requires_native_window(api: DesktopWorkspaceAPI) -> No
 def test_document_size_limit(api: DesktopWorkspaceAPI) -> None:
     with pytest.raises(DesktopAPIError, match="2 MB"):
         api.save_document(_project(api), "brief", {"text": "x" * 2_000_001})
+
+
+def test_reference_import_uses_native_picker_and_stores_hash(
+    api: DesktopWorkspaceAPI, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import hashlib
+    import sys
+    from types import SimpleNamespace
+
+    image = tmp_path / "reference.png"
+    payload = b"\x89PNG\r\n\x1a\n" + b"test-image-payload"
+    image.write_bytes(payload)
+
+    class FakeWindow:
+        def create_file_dialog(self, *_args, **_kwargs):
+            return [str(image)]
+
+    monkeypatch.setitem(
+        sys.modules,
+        "webview",
+        SimpleNamespace(OPEN_DIALOG=1, FOLDER_DIALOG=2),
+    )
+    api._attach_window(FakeWindow())
+    project_id = _project(api)
+    result = api.import_character_reference(project_id, "hero_01")
+
+    assert result["mime_type"] == "image/png"
+    assert result["size_bytes"] == len(payload)
+    assert result["sha256"] == hashlib.sha256(payload).hexdigest()
+    stored = api._workspace.root / "projects" / project_id / result["relative_path"]
+    assert stored.read_bytes() == payload
+
+
+def test_reference_import_rejects_fake_image_extension(
+    api: DesktopWorkspaceAPI, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import sys
+    from types import SimpleNamespace
+
+    fake = tmp_path / "fake.png"
+    fake.write_bytes(b"not a real png")
+
+    class FakeWindow:
+        def create_file_dialog(self, *_args, **_kwargs):
+            return [str(fake)]
+
+    monkeypatch.setitem(
+        sys.modules,
+        "webview",
+        SimpleNamespace(OPEN_DIALOG=1, FOLDER_DIALOG=2),
+    )
+    api._attach_window(FakeWindow())
+    with pytest.raises(DesktopAPIError, match="signatures"):
+        api.import_character_reference(_project(api), "hero_01")
