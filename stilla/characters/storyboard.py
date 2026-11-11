@@ -11,7 +11,7 @@ from typing import Any
 
 from stilla.characters.consistency import CharacterGenerationPlan, build_generation_plan
 from stilla.characters.schema import CharacterProfile, CharacterProfileError
-from stilla.planning.schema import ShotPlan, PlanningValidationError
+from stilla.planning.schema import PlanningValidationError, ShotPlan
 
 _SHA256 = re.compile(r"^[a-f0-9]{64}$")
 _MAX_REVISIONS = 500
