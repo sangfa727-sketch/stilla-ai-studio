@@ -162,6 +162,7 @@ class CharacterProfile:
     references: tuple[CharacterReference, ...] = ()
     voice_description: str = ""
     language: str = "en"
+    canonical_seed: int | None = None
     schema_version: int = 1
 
     def __post_init__(self) -> None:
@@ -172,6 +173,11 @@ class CharacterProfile:
         _text(self.language, "character.language", 35, required=True)
         if self.schema_version != 1 or isinstance(self.schema_version, bool):
             raise CharacterProfileError("unsupported character schema version")
+        if self.canonical_seed is not None and (
+            isinstance(self.canonical_seed, bool) or not isinstance(self.canonical_seed, int)
+            or not 0 <= self.canonical_seed <= 2**32 - 1
+        ):
+            raise CharacterProfileError("canonical_seed must be an unsigned 32-bit integer")
         if not isinstance(self.visual, VisualIdentity) or not isinstance(self.personality, ComedyPersonality):
             raise CharacterProfileError("visual and personality must be validated profile objects")
         refs = tuple(self.references)
@@ -204,12 +210,13 @@ class CharacterProfile:
             "personality": self.personality.to_dict(),
             "references": [ref.to_dict() for ref in self.references],
             "voice_description": self.voice_description, "language": self.language,
+            "canonical_seed": self.canonical_seed,
         }
 
     @classmethod
     def from_dict(cls, data: object) -> "CharacterProfile":
         allowed = {"schema_version", "id", "name", "species_or_type", "visual",
-                   "personality", "references", "voice_description", "language"}
+                   "personality", "references", "voice_description", "language", "canonical_seed"}
         obj = _strict(data, "character_profile", allowed)
         raw_refs = obj.get("references", [])
         if not isinstance(raw_refs, list) or len(raw_refs) > 20:
@@ -220,5 +227,6 @@ class CharacterProfile:
             visual=VisualIdentity.from_dict(obj.get("visual")),
             personality=ComedyPersonality.from_dict(obj.get("personality", {})),
             references=refs, voice_description=obj.get("voice_description", ""),
-            language=obj.get("language", "en"), schema_version=obj.get("schema_version", 1),
+            language=obj.get("language", "en"), canonical_seed=obj.get("canonical_seed"),
+            schema_version=obj.get("schema_version", 1),
         )
