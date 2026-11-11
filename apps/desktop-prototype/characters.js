@@ -335,6 +335,11 @@
         const cached = existing.find((item) => item.profile.id === profile.id);
         return { profile, revision: cached?.revision || 1, updated_at: cached?.updated_at || new Date().toISOString(), reference_previews: {} };
       }));
+    } else if (activeProjectId && !localStorage.getItem(storageKey()) &&
+               !localStorage.getItem(KEY + ".project-migrated") && localStorage.getItem(KEY)) {
+      // Preserve the pre-project browser library by migrating it once into the first project.
+      localStorage.setItem(storageKey(), localStorage.getItem(KEY));
+      localStorage.setItem(KEY + ".project-migrated", "1");
     }
   };
   window.STILLACharacterUI = { render, wire, loadProject };
