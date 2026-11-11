@@ -81,7 +81,7 @@ class VisualIdentity:
                 for field, value in ((name, getattr(self, name)) for name in self.__dataclass_fields__)}
 
     @classmethod
-    def from_dict(cls, data: object) -> "VisualIdentity":
+    def from_dict(cls, data: object) -> VisualIdentity:
         allowed = set(cls.__dataclass_fields__)
         obj = _strict(data, "visual_identity", allowed)
         return cls(**obj)
@@ -115,7 +115,7 @@ class ComedyPersonality:
                        else getattr(self, name)) for name in self.__dataclass_fields__}
 
     @classmethod
-    def from_dict(cls, data: object) -> "ComedyPersonality":
+    def from_dict(cls, data: object) -> ComedyPersonality:
         return cls(**_strict(data, "comedy_personality", set(cls.__dataclass_fields__)))
 
 
@@ -145,7 +145,7 @@ class CharacterReference:
                 "role": self.role, "sha256": self.sha256}
 
     @classmethod
-    def from_dict(cls, data: object) -> "CharacterReference":
+    def from_dict(cls, data: object) -> CharacterReference:
         return cls(**_strict(data, "character_reference",
                              {"asset_id", "relative_path", "role", "sha256"}))
 
@@ -214,7 +214,7 @@ class CharacterProfile:
         }
 
     @classmethod
-    def from_dict(cls, data: object) -> "CharacterProfile":
+    def from_dict(cls, data: object) -> CharacterProfile:
         allowed = {"schema_version", "id", "name", "species_or_type", "visual",
                    "personality", "references", "voice_description", "language", "canonical_seed"}
         obj = _strict(data, "character_profile", allowed)
