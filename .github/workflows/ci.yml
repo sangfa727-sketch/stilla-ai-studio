@@ -30,3 +30,13 @@ jobs:
           node --check apps/desktop-prototype/i18n.js
           node --check apps/desktop-prototype/characters.js
           node --check apps/desktop-prototype/desktop-bridge.js
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          html = Path("apps/desktop-prototype/index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script>([\\s\\S]*?)</script>", html)
+          if len(scripts) != 1:
+              raise SystemExit(f"Expected one inline application script, found {len(scripts)}")
+          Path("/tmp/stilla-inline.js").write_text(scripts[0], encoding="utf-8")
+          PY
+          node --check /tmp/stilla-inline.js
