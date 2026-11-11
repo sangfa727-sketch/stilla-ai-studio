@@ -17,6 +17,11 @@
 
   window.STILLABridge = Object.freeze({
     isDesktop: () => Boolean(api()),
+    ready: () => new Promise((resolve) => {
+      if (api()) { resolve(true); return; }
+      if (!window.pywebview) { resolve(false); return; }
+      window.addEventListener("pywebviewready", () => resolve(Boolean(api())), { once: true });
+    }),
     runtimeInfo: () => call("get_runtime_info"),
     chooseWorkspace: () => call("choose_workspace_directory"),
     listProjects: () => call("list_projects"),
