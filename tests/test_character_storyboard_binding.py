@@ -53,7 +53,7 @@ def test_bind_character_to_all_shots_and_compile_generation_plans() -> None:
     assert all(item.profile_revision == 1 for item in bound.bindings)
     plans = bound.compile_shot("shot_01")
     assert len(plans) == 1
-    assert "Milo" in plans[0].prompt
+    assert "round pear-shaped body" in plans[0].prompt
     assert plans[0].identity_fingerprint == profile().identity_fingerprint
 
 
