@@ -29,3 +29,4 @@ jobs:
         run: |
           node --check apps/desktop-prototype/i18n.js
           node --check apps/desktop-prototype/characters.js
+          node --check apps/desktop-prototype/desktop-bridge.js
