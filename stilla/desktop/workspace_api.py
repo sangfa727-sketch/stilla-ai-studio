@@ -103,9 +103,30 @@ class DesktopWorkspaceAPI:
         return {"saved": True, "project_id": project_id, "document": name}
 
     def load_document(self, project_id: str, name: str) -> Any:
-        self._require_project(project_id)
+        project = self._require_project(project_id)
         if name not in {"brief", "script", "storyboard", "settings"}:
             raise DesktopAPIError("Unsupported project document")
+        if name == "storyboard":
+            documents = project / "documents"
+            target = documents / "storyboard.json"
+            if documents.is_symlink() or target.is_symlink():
+                raise DesktopAPIError("Stored storyboard path is unsafe")
+            if not documents.exists() and not target.exists():
+                return {
+                    "schema_version": 1,
+                    "shot_plan": {"id": "story_plan", "title": "Project storyboard", "shots": []},
+                    "character_revisions": [],
+                    "bindings": [],
+                }
+            if not documents.is_dir():
+                raise DesktopAPIError("Stored storyboard directory is unsafe")
+            if not target.exists():
+                return {
+                    "schema_version": 1,
+                    "shot_plan": {"id": "story_plan", "title": "Project storyboard", "shots": []},
+                    "character_revisions": [],
+                    "bindings": [],
+                }
         with self._lock:
             try:
                 value = self._workspace.load_document(project_id, name)

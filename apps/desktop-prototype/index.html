@@ -6,6 +6,7 @@
 <meta name="color-scheme" content="dark light">
 <title>STILLA Studio — UX Prototype</title>
 <link rel="stylesheet" href="characters.css">
+<link rel="stylesheet" href="storyboard.css">
 <style>
 :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark;--bg:#101116;--panel:#181a22;--panel2:#20232d;--line:#303441;--text:#f2f3f8;--muted:#a2a7b6;--accent:#b6a4ff;--accent2:#8c78f4;--good:#83d8b0;--warn:#f2c879;--bad:#ff9292;--radius:14px}
 :root[data-theme=light]{color-scheme:light;--bg:#f4f5f9;--panel:#fff;--panel2:#eef0f6;--line:#d9dce6;--text:#202331;--muted:#62697b;--accent:#6550d9;--accent2:#4e3ac0;--good:#147c53;--warn:#93600b;--bad:#b52e3c}
@@ -54,6 +55,7 @@
 <script src="i18n.js"></script>
 <script src="desktop-bridge.js"></script>
 <script src="characters.js"></script>
+<script src="storyboard.js"></script>
 <script>
 const pageNames={projects:["Projects","Your work, organized in one place."],script:["Script & Storyboard","Shape the story and review each scene before generating assets."],generate:["Generate","Choose an available runtime and create assets as explicit, trackable jobs."],edit:["Edit Studio","Arrange clips, audio and captions in a focused editing workspace."],assets:["Assets & History","Find imported media, generated results and prior job details."],export:["Export","Validate output settings before creating a final file."],settings:["Settings","Control appearance, language, local runtimes and data handling."],characters:["Character Creator","Create original characters and preserve their identity across future stories."]};
 const icons={projects:"▦",script:"✎",generate:"✧",edit:"▻",assets:"▤",export:"⇧",settings:"⚙"};
@@ -115,6 +117,7 @@ function render(page=currentPage){
 }
 function wirePage(){
 if(currentPage==="characters")window.STILLACharacterUI.wire();
+if(currentPage==="script"){main.insertAdjacentHTML("beforeend",'<div id="storyboardBindingRoot"></div>');window.STILLAStoryboardUI.mount(activeProjectId);}
 if(currentPage==="projects")refreshProjects();
 main.querySelectorAll("[data-page]").forEach(el=>el.addEventListener("click",()=>render(el.dataset.page)));
 const $=id=>document.getElementById(id);

@@ -348,5 +348,5 @@
       localStorage.setItem(KEY + ".project-migrated", "1");
     }
   };
-  window.STILLACharacterUI = { render, wire, loadProject };
+  window.STILLACharacterUI = { render, wire, loadProject, getProfiles: () => readLibrary() };
 })();

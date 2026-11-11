@@ -196,3 +196,54 @@ def test_reference_import_rejects_fake_image_extension(
     api._attach_window(FakeWindow())
     with pytest.raises(DesktopAPIError, match="signatures"):
         api.import_character_reference(_project(api), "hero_01")
+
+
+def _empty_storyboard() -> dict:
+    return {
+        "schema_version": 1,
+        "shot_plan": {"id": "story_plan", "title": "Project storyboard", "shots": []},
+        "character_revisions": [],
+        "bindings": [],
+    }
+
+
+def test_storyboard_document_round_trip_is_project_scoped(api: DesktopWorkspaceAPI) -> None:
+    first = _project(api)
+    second = _project(api)
+    first_doc = _empty_storyboard()
+    first_doc["shot_plan"]["title"] = "First project storyboard"
+    second_doc = _empty_storyboard()
+    second_doc["shot_plan"]["title"] = "Second project storyboard"
+
+    api.save_document(first, "storyboard", first_doc)
+    api.save_document(second, "storyboard", second_doc)
+
+    assert api.load_document(first, "storyboard")["shot_plan"]["title"] == "First project storyboard"
+    assert api.load_document(second, "storyboard")["shot_plan"]["title"] == "Second project storyboard"
+
+
+def test_missing_storyboard_load_returns_valid_empty_document(api: DesktopWorkspaceAPI) -> None:
+    project_id = _project(api)
+    assert api.load_document(project_id, "storyboard") == _empty_storyboard()
+
+
+def test_storyboard_document_rejects_invalid_binding_payload(api: DesktopWorkspaceAPI) -> None:
+    with pytest.raises(DesktopAPIError, match="failed validation"):
+        api.save_document(_project(api), "storyboard", {
+            "schema_version": 1,
+            "shot_plan": {"id": "../unsafe", "title": "Bad", "shots": []},
+            "character_revisions": [],
+            "bindings": [],
+        })
+
+
+def test_storyboard_load_rejects_symlink_document_directory(
+    api: DesktopWorkspaceAPI, tmp_path: Path
+) -> None:
+    project_id = _project(api)
+    project = api._workspace.root / "projects" / project_id
+    outside = tmp_path / "outside-documents"
+    outside.mkdir()
+    (project / "documents").symlink_to(outside, target_is_directory=True)
+    with pytest.raises(DesktopAPIError, match="unsafe"):
+        api.load_document(project_id, "storyboard")
