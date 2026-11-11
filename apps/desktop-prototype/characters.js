@@ -251,13 +251,16 @@
         event.target.value = "";
       }
     });
-    document.querySelectorAll("[data-remove-ref]").forEach((button) => button.addEventListener("click", () => {
+    document.querySelectorAll("[data-remove-ref]").forEach((button) => button.addEventListener("click", async () => {
       const items = readLibrary(); const record = items.find((item) => item.profile.id === selectedId);
       if (!record) return;
       const id = button.dataset.removeRef;
       record.profile.references = record.profile.references.filter((ref) => ref.asset_id !== id);
       delete record.reference_previews[id]; record.revision += 1; record.updated_at = new Date().toISOString();
-      try { writeLibrary(items); render(); } catch (error) { alert(error.message); }
+      try {
+        if (window.STILLABridge?.isDesktop()) await window.STILLABridge.saveCharacter(activeProjectId, record.profile);
+        writeLibrary(items); render();
+      } catch (error) { alert("Could not update reference metadata: " + error.message); }
     }));
     $("importCharacterBundle")?.addEventListener("click", () => $("characterBundleInput")?.click());
     $("characterBundleInput")?.addEventListener("change", async (event) => {
@@ -273,6 +276,9 @@
           throw new Error("Character bundle does not contain a valid profile.");
         }
         if (profile.references.length > 20) throw new Error("A character bundle may contain up to 20 references.");
+        if (window.STILLABridge?.isDesktop() && profile.references.length) {
+          throw new Error("This desktop import does not unpack embedded bundle images. Import the character profile without references, then add reference images using Import from PC.");
+        }
         const items = readLibrary();
         if (items.length >= MAX_PROFILE_COUNT) throw new Error("The browser prototype supports up to 30 saved characters.");
         const previews = {};
