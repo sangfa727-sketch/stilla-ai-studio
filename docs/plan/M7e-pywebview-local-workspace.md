@@ -31,9 +31,15 @@ is an optional dependency and does not replace the browser prototype or add a we
   multi-file transactions remain follow-up work; this slice must not claim them.
 - Image signature validation is not a full decoder/semantic malware scan. The importer
   does not execute or render imported files.
-- The browser prototype's existing Character Library still uses localStorage until a
-  later UI integration step. The bridge and persistence API are available to the
-  native runtime but are not yet wired into every page interaction.
+- The Projects page now uses the native workspace/project API in PyWebView. Character
+  profiles are loaded and saved in the selected project; native reference imports store
+  project-relative files and SHA-256 metadata. Browser mode retains localStorage and
+  migrates the legacy browser library once into the first selected project.
+- Native reference previews are not yet rendered in the desktop UI. Removing a reference
+  removes its profile metadata but currently leaves the old asset file orphaned; safe
+  garbage collection is pending.
+- Storyboard binding UI persistence is not yet wired. The underlying bridge can save and
+  validate storyboard documents, but no UI workflow currently submits those snapshots.
 - Actual Windows packaging, native dialog behavior, Burmese font QA, and GPU/local-model
   smoke tests require acceptance on the user's PC.
 - No ComfyUI reference-conditioning node is enabled or assumed by this change.
@@ -43,6 +49,8 @@ is an optional dependency and does not replace the browser prototype or add a we
 
 - CI: Python tests, Ruff, and prototype JavaScript syntax checks pass.
 - Native runtime: optional dependency imports and launches on Windows.
+- UI integration CI: desktop bridge, project selection, and character persistence code
+  pass Python and JavaScript checks.
 - Manual acceptance: choose a workspace, create two isolated projects, save/reload
   documents and character profiles, import valid and invalid images, restart and verify
   persistence, and confirm no external network/media transfer.
