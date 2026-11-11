@@ -148,6 +148,19 @@
       setPath(profile, key, value);
     }
     if (!profile.name) throw new Error("Please enter a character name.");
+    if (profile.name.length > 200 || profile.species_or_type.length > 300 ||
+        profile.language.length > 35 || profile.voice_description.length > 2000) {
+      throw new Error("One or more character fields exceed the supported M7a schema limits.");
+    }
+    for (const section of [profile.visual, profile.personality]) {
+      for (const value of Object.values(section)) {
+        if (typeof value === "string" && value.length > 8000) throw new Error("A character description is too long.");
+        if (Array.isArray(value) && (value.length > 40 || value.some((item) => typeof item !== "string" || item.length > 500))) {
+          throw new Error("A character list exceeds the supported M7a schema limits.");
+        }
+      }
+    }
+    if (profile.references.length > 20) throw new Error("A character can have up to 20 reference images.");
     for (const key of ["silhouette", "body_proportions", "face_shape", "eyes"]) {
       if (!profile.visual[key].trim()) throw new Error("Complete the required visual identity fields: silhouette, body proportions, face shape and eyes.");
     }
@@ -238,6 +251,7 @@
             !profile.visual || !profile.personality || !Array.isArray(profile.references)) {
           throw new Error("Character bundle does not contain a valid profile.");
         }
+        if (profile.references.length > 20) throw new Error("A character bundle may contain up to 20 references.");
         const items = readLibrary();
         if (items.length >= MAX_PROFILE_COUNT) throw new Error("The browser prototype supports up to 30 saved characters.");
         const previews = {};
