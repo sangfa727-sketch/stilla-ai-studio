@@ -73,3 +73,19 @@ No license has been selected yet. Do not assume this repository or any future th
 ## UI languages
 
 The desktop UX prototype supports an English (EN) and Burmese (MY) interface language selector in the top bar and Settings. The selected language is stored locally in the browser. This is UI localization only; character dialogue language remains a separate per-character setting. The current prototype does not yet provide a native desktop filesystem bridge or durable project-folder integration.
+
+
+## Optional Windows desktop runtime (M7e)
+
+The HTML prototype can still be opened directly in a browser. To launch the same UI
+inside the optional PyWebView desktop host:
+
+1. Install Python 3.11 or newer.
+2. Install the desktop extra: python -m pip install -e ".[desktop,dev]".
+3. Launch: python -m stilla.desktop.app.
+
+The desktop host exposes a narrow local bridge for project folders, validated project
+documents, character profiles, and native image import. The bridge is an integration
+foundation: the prototype's existing project and Character Library controls are not yet
+fully connected to durable storage. Do not treat demo project counts or sample assets
+as real data. Windows native-dialog and Burmese font acceptance is still required.
