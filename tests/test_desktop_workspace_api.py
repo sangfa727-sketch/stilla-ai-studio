@@ -244,6 +244,7 @@ def test_storyboard_load_rejects_symlink_document_directory(
     project = api._workspace.root / "projects" / project_id
     outside = tmp_path / "outside-documents"
     outside.mkdir()
+    (project / "documents").rmdir()
     (project / "documents").symlink_to(outside, target_is_directory=True)
     with pytest.raises(DesktopAPIError, match="unsafe"):
         api.load_document(project_id, "storyboard")
