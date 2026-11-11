@@ -73,6 +73,8 @@ async function refreshProjects(){
   projectsCache=window.STILLABridge?.isDesktop()?await window.STILLABridge.listProjects():JSON.parse(localStorage.getItem("stilla.projects.v1")||"[]");
   if(!Array.isArray(projectsCache))projectsCache=[];
   document.getElementById("projectCount").textContent=projectsCache.length+" project(s)";
+  const activeProject=projectsCache.find(project=>project.id===activeProjectId);
+  if(activeProject)document.getElementById("projectLabel").textContent=activeProject.title;
   status.textContent=window.STILLABridge?.isDesktop()?"Desktop workspace: "+(await window.STILLABridge.runtimeInfo()).workspace_root:"Browser-only project storage";
   list.innerHTML=projectsCache.length?projectsCache.map(p=>'<button class="tile" type="button" data-project-id="'+escapeHtml(p.id)+'" style="width:100%;text-align:left;border-color:'+(p.id===activeProjectId?"var(--accent)":"var(--line)")+'"><div class="tile-icon">▦</div><div><strong>'+escapeHtml(p.title)+'</strong><div class="muted small">'+escapeHtml(p.updated_at||p.created_at||"")+(p.id===activeProjectId?" · Selected":"")+'</div></div></button>').join(""):'<div class="character-empty">No projects yet. Create a project to begin.</div>';
   list.querySelectorAll("[data-project-id]").forEach(button=>button.addEventListener("click",()=>{activeProjectId=button.dataset.projectId;localStorage.setItem("stilla.active-project.v1",activeProjectId);const project=projectsCache.find(p=>p.id===activeProjectId);document.getElementById("projectLabel").textContent=project?.title||"STILLA Project";document.getElementById("saveState").textContent="Project selected";refreshProjects();}));
