@@ -1,0 +1,34 @@
+
+.character-prototype-notice{display:flex;gap:12px;align-items:flex-start;padding:13px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);margin-bottom:16px;line-height:1.5;color:var(--muted)}
+.character-prototype-notice strong{color:var(--warn);white-space:nowrap}
+.character-workspace{display:grid;grid-template-columns:minmax(250px,.72fr) minmax(0,2fr);gap:16px;align-items:start}
+.character-library{position:sticky;top:16px}
+.character-library-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.character-library-item{display:flex;align-items:center;gap:10px;text-align:left;width:100%;padding:10px;background:var(--panel2);border-color:var(--line)}
+.character-library-item.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--panel2))}
+.character-avatar{width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;border-radius:10px;background:var(--bg);font-weight:800;color:var(--accent)}
+.character-library-meta{flex:1;min-width:0}.character-library-meta strong,.character-library-meta small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.character-library-meta small,.character-ref-card small{color:var(--muted);font-size:11px;margin-top:4px}
+.character-empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:13px;line-height:1.5;text-align:center}
+.character-library-foot{margin-top:14px;line-height:1.5}
+.character-editor{min-width:0;display:flex;flex-direction:column;gap:14px}
+.character-form{display:flex;flex-direction:column;gap:14px}
+.character-section,.character-reference-section{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.character-section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
+.character-section-head h2{font-size:16px;margin:5px 0 0}.character-section-head p{margin:7px 0 0}
+.character-fields{display:grid;gap:12px}.character-fields.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.character-field{display:flex;flex-direction:column;gap:6px;min-width:0}.character-field>span{font-size:12px;color:var(--muted)}.character-field small{font-size:11px;color:var(--muted);line-height:1.4}
+.character-field textarea{min-height:68px}
+.character-form-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0}
+.character-form-actions .error{color:var(--bad)}
+.button-like{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer;background:var(--panel2);white-space:nowrap}
+.character-reference-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.character-ref-card{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel2);min-width:0}
+.character-ref-card img{display:block;width:100%;height:140px;object-fit:cover;background:var(--bg)}
+.character-ref-card>div:not(.character-ref-placeholder){padding:8px 10px}
+.character-ref-card strong,.character-ref-card small{display:block;overflow-wrap:anywhere}
+.character-ref-card button{margin:0 8px 8px}
+.character-ref-placeholder{height:140px;display:grid;place-items:center;padding:12px;text-align:center;color:var(--muted);font-size:12px}
+.character-sheet-row,.character-use-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.character-sheet-row p,.character-use-row p{margin:5px 0 0}
+@media(max-width:900px){.character-workspace{grid-template-columns:1fr}.character-library{position:static}.character-library-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:580px){.character-fields.two{grid-template-columns:1fr}.character-prototype-notice{display:block}.character-prototype-notice strong{display:block;margin-bottom:4px}.character-section,.character-reference-section{padding:14px}.character-sheet-row,.character-use-row,.character-form-actions{align-items:flex-start;flex-direction:column}.character-library-list{grid-template-columns:1fr}}
