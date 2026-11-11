@@ -36,8 +36,11 @@ is an optional dependency and does not replace the browser prototype or add a we
   project-relative files and SHA-256 metadata. Browser mode retains localStorage and
   migrates the legacy browser library once into the first selected project.
 - Native reference previews are not yet rendered in the desktop UI. Removing a reference
-  removes its profile metadata but currently leaves the old asset file orphaned; safe
+  persists its profile metadata removal but leaves the old asset file orphaned; safe
   garbage collection is pending.
+- The displayed character revision counter is cached in browser storage, not a durable
+  revision-history ledger. Clearing browser storage can reset the displayed counter; the
+  current Python profile file stores only the latest validated profile.
 - Storyboard binding UI persistence is not yet wired. The underlying bridge can save and
   validate storyboard documents, but no UI workflow currently submits those snapshots.
 - Actual Windows packaging, native dialog behavior, Burmese font QA, and GPU/local-model
