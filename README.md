@@ -68,3 +68,8 @@ The application should discover compatible models through `GET /models` and use 
 ## License
 
 No license has been selected yet. Do not assume this repository or any future third-party integration is licensed for redistribution until a license review is completed.
+
+
+## UI languages
+
+The desktop UX prototype supports an English (EN) and Burmese (MY) interface language selector in the top bar and Settings. The selected language is stored locally in the browser. This is UI localization only; character dialogue language remains a separate per-character setting. The current prototype does not yet provide a native desktop filesystem bridge or durable project-folder integration.
