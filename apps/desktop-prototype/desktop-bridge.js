@@ -2,6 +2,7 @@
   "use strict";
 
   const api = () => window.pywebview && window.pywebview.api ? window.pywebview.api : null;
+  const desktopHost = () => new URLSearchParams(window.location.search).get("runtime") === "desktop";
   const requireApi = () => {
     const value = api();
     if (!value) throw new Error("The native desktop bridge is unavailable.");
@@ -16,10 +17,10 @@
   };
 
   window.STILLABridge = Object.freeze({
-    isDesktop: () => Boolean(api()),
+    isDesktop: () => desktopHost() || Boolean(api()),
     ready: () => new Promise((resolve) => {
       if (api()) { resolve(true); return; }
-      if (!window.pywebview) { resolve(false); return; }
+      if (!desktopHost()) { resolve(false); return; }
       window.addEventListener("pywebviewready", () => resolve(Boolean(api())), { once: true });
     }),
     runtimeInfo: () => call("get_runtime_info"),
