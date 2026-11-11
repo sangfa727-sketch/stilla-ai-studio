@@ -1,7 +1,7 @@
 # M7b — Character Creator and Library UI
 
 - Status: browser UX prototype implemented; not production-connected.
-- Branch: \`feat/m7b-character-creator-library-ui\`
+- Branch: `feat/m7b-character-creator-library-ui`
 - Depends on: M7a Character DNA / consistency core.
 
 ## Delivered
@@ -10,13 +10,13 @@
 - Captures the M7a profile fields: identity, visual anchors, original comedy personality, voice description, language, and optional canonical seed.
 - Provides a searchable character library with create, edit, revision increment, explicit delete confirmation, and profile selection.
 - Imports PNG, JPEG, and WebP reference images (512 KiB maximum each; up to 20 per character) and displays local previews.
-- Exports and imports versioned \`.stilla-character.json\` bundles, including reference previews, for backup and transfer between browser profiles.
+- Exports and imports versioned `.stilla-character.json` bundles, including reference previews, for backup and transfer between browser profiles.
 - Copies a compact identity brief for manual use in the current story workflow.
 - Uses responsive layouts and existing dark/light theme variables.
 
 ## Storage and safety boundary
 
-This is a clickable browser prototype, not the connected desktop application. Profiles and image previews are held in browser \`localStorage\` under \`stilla.character-library.v1\`, with a 3 MiB total payload guard and a 30-character cap. Browser storage can be cleared by the user or browser; export bundles are the backup mechanism.
+This is a clickable browser prototype, not the connected desktop application. Profiles and image previews are held in browser `localStorage` under `stilla.character-library.v1`, with a 3 MiB total payload guard and a 30-character cap. Browser storage can be cleared by the user or browser; export bundles are the backup mechanism.
 
 Reference paths in the profile are project-relative placeholders. The prototype does not write files into a STILLA project folder, does not call the Python character library, and does not upload media anywhere. Imported bundle data is treated as untrusted; preview data URLs are restricted to base64 PNG/JPEG/WebP. Delete is confirmation-gated.
 
