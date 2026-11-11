@@ -84,6 +84,95 @@
       "Warm, natural light":"နွေးထွေးသော သဘာဝအလင်း","Cinematic, high contrast":"ရုပ်ရှင်ဆန်ပြီး အလင်းအမှောင်ကွာခြားမှုမြင့်",
       "Documentary realism":"မှတ်တမ်းရုပ်ရှင်ဆန်သော လက်တွေ့ပုံစံ","Soft illustration":"နူးညံ့သော သရုပ်ဖော်ပုံ",
       "16:9 — landscape":"16:9 — အလျားလိုက်","9:16 — vertical":"9:16 — ဒေါင်လိုက်","1:1 — square":"1:1 — စတုရန်း",
+      "Sample jobs only. No model or export process is running.":"နမူနာ Job များသာဖြစ်သည်။ Model သို့မဟုတ် Export လုပ်ငန်း မလည်ပတ်ပါ။",
+      "Local image runtime unavailable in prototype":"နမူနာတွင် Local Image Runtime မရနိုင်သေးပါ။",
+      "Illustrative status only":"အခြေအနေကို နမူနာပြသခြင်းသာ ဖြစ်သည်။",
+      "Task states must come from real workers.":"လုပ်ငန်းအခြေအနေများကို တကယ့် Worker များထံမှသာ ရယူရမည်။",
+      "Last edited just now · 3 scenes · 00:42":"ယခုလေးတင် ပြင်ဆင်ထားသည် · Scene ၃ ခု · 00:42",
+      "Morning in the city":"မြို့၏ နံနက်ခင်း",
+      "Script draft · 6 scenes":"ဇာတ်ညွှန်း Draft · Scene ၆ ခု",
+      "Visual mood exploration":"ရုပ်ပုံအငွေ့အသက် စမ်းသပ်မှု",
+      "2 sample jobs · no real outputs":"နမူနာ Job ၂ ခု · တကယ့် Output မရှိပါ",
+      "One unavailable runtime":"အသုံးမပြုနိုင်သေးသော Runtime တစ်ခု",
+      "Scene list is sample data; reorder is not implemented yet.":"Scene စာရင်းသည် နမူနာဒေတာဖြစ်သည်။ အစီအစဉ်ပြန်စီခြင်း မထည့်သွင်းရသေးပါ။",
+      "Version 1":"Version ၁","Unsaved sample text":"မသိမ်းဆည်းရသေးသော နမူနာစာသား",
+      "Add scene note":"Scene မှတ်ချက်ထည့်ရန်","Scene note added to this prototype view.":"ဤနမူနာမြင်ကွင်းတွင် Scene မှတ်ချက် ထည့်ပြီးပါပြီ။",
+      "Scene properties":"Scene ဂုဏ်သတ္တိများ","8 seconds":"၈ စက္ကန့်","12 seconds":"၁၂ စက္ကန့်",
+      "15 seconds":"၁၅ စက္ကန့်","30 seconds":"၃၀ စက္ကန့်",
+      "Still image":"ငြိမ်ပုံ","Video clip":"ဗီဒီယို Clip",
+      "Prompt":"Prompt","Local model / runtime":"Local Model / Runtime",
+      "Not detected — choose after runtime check":"မတွေ့ရှိပါ — Runtime စစ်ဆေးပြီးမှ ရွေးပါ",
+      "Text planning · Bionic/Qwen (connection unverified)":"Text Planning · Bionic/Qwen (ချိတ်ဆက်မှု အတည်မပြုရသေးပါ)",
+      "Image runtime · not configured":"Image Runtime · မသတ်မှတ်ရသေးပါ",
+      "Video runtime · not configured":"Video Runtime · မသတ်မှတ်ရသေးပါ",
+      "No model is connected in this prototype. Hardware fit, installed model availability and supported controls must be checked before a real job starts.":"ဤနမူနာတွင် Model မချိတ်ဆက်ရသေးပါ။ တကယ့် Job မစတင်မီ Hardware ကိုက်ညီမှု၊ ထည့်သွင်းထားသော Model ရရှိမှုနှင့် ပံ့ပိုးသော Controls များကို စစ်ဆေးရမည်။",
+      "Result preview":"ရလဒ် Preview","Placeholder":"နေရာယူပြသချက်","Creation preview":"ဖန်တီးမှု Preview",
+      "Generated output will appear here":"ဖန်တီးပြီး Output ကို ဤနေရာတွင် ပြသပါမည်","No output file exists":"Output ဖိုင် မရှိသေးပါ",
+      "View assets":"မီဒီယာများ ကြည့်ရန်","RUNTIME":"RUNTIME","HARDWARE":"HARDWARE",
+      "Capability check pending":"စွမ်းဆောင်ရည်စစ်ဆေးရန် ကျန်ရှိသည်","TASK CONTROL":"လုပ်ငန်းထိန်းချုပ်မှု",
+      "Queue / cancel / retry":"တန်းစီ / ပယ်ဖျက် / ပြန်စမ်း","Only illustrative controls here; no worker is launched.":"ဤနေရာတွင် နမူနာ Controls များသာ ရှိသည်။ Worker မစတင်ထားပါ။",
+      "Undo":"နောက်ပြန်","Redo":"ပြန်လုပ်","Open Export →":"Export ဖွင့်ရန် →",
+      "Media bin":"မီဒီယာဖိုင်တွဲ","Video · 00:08":"ဗီဒီယို · 00:08","Audio · 00:42":"အသံ · 00:42",
+      "Subtitle file":"စာတန်းဖိုင်","Sample media names only. No media files are bundled.":"မီဒီယာအမည် နမူနာများသာဖြစ်သည်။ မီဒီယာဖိုင်များ မပါဝင်ပါ။",
+      "Preview monitor":"Preview Monitor","Timeline preview":"Timeline Preview","00:00:12:08 · paused":"00:00:12:08 · ရပ်ထားသည်",
+      "▶ Play sample":"▶ နမူနာဖွင့်ရန်","00:42 total":"စုစုပေါင်း 00:42","Inspector":"စစ်ဆေးရန်",
+      "Clip selected":"Clip ရွေးထားသည်","Clip name":"Clip အမည်","Speed":"အမြန်နှုန်း","Audio gain":"အသံအတိုးအကျယ်",
+      "Real editing requires an engine adapter and atomic, undoable timeline operations.":"တကယ့်တည်းဖြတ်မှုအတွက် Engine Adapter နှင့် နောက်ပြန်လုပ်နိုင်သော Atomic Timeline လုပ်ဆောင်ချက်များ လိုအပ်သည်။",
+      "Timeline":"Timeline","VIDEO 1":"ဗီဒီယို ၁","AUDIO 1":"အသံ ၁","CAPTIONS":"စာတန်းများ",
+      "Caption 01":"စာတန်း ၀၁","Caption 02":"စာတန်း ၀၂","Caption 03":"စာတန်း ၀၃",
+      "Imported video · Untitled film · 00:08":"ထည့်သွင်းထားသော ဗီဒီယို · အမည်မပေးရသေးသော ရုပ်ရှင် · 00:08",
+      "Illustrative generation record · prompt unavailable":"နမူနာဖန်တီးမှုမှတ်တမ်း · Prompt မရနိုင်ပါ",
+      "Job history · runtime unavailable":"Job မှတ်တမ်း · Runtime မရနိုင်ပါ",
+      "Real provenance should preserve source, model/runtime version, prompt/settings when available, and job outcome without inventing missing metadata.":"တကယ့် Provenance တွင် Source၊ Model/Runtime Version၊ ရရှိနိုင်ပါက Prompt/Settings နှင့် Job ရလဒ်တို့ကို ထိန်းသိမ်းရမည်။ မရှိသော Metadata ကို မဖန်တီးရပါ။",
+      "MP4 · H.264 · compatible":"MP4 · H.264 · ကိုက်ညီသောပုံစံ",
+      "WebM · VP9 (engine support required)":"WebM · VP9 (Engine ပံ့ပိုးမှုလိုအပ်သည်)",
+      "ProRes (engine support required)":"ProRes (Engine ပံ့ပိုးမှုလိုအပ်သည်)",
+      "1080 × 1920 vertical":"1080 × 1920 ဒေါင်လိုက်","Balanced":"မျှတသောအရည်အသွေး",
+      "High quality":"အရည်အသွေးမြင့်","Smaller file":"ဖိုင်အရွယ်အစားသေး",
+      "Validation required: no actual media, output path or rendering engine is connected.":"စစ်ဆေးရန်လိုအပ်သည်။ တကယ့်မီဒီယာ၊ Output Path သို့မဟုတ် Rendering Engine မချိတ်ဆက်ရသေးပါ။",
+      "Not verified":"အတည်မပြုရသေးပါ","Source media":"မူရင်းမီဒီယာ",
+      "Missing-media scan not implemented":"မီဒီယာပျောက်ဆုံးမှု စစ်ဆေးခြင်း မထည့်သွင်းရသေးပါ",
+      "Export destination":"Export သိမ်းဆည်းမည့်နေရာ","No filesystem permission in prototype":"နမူနာတွင် Filesystem ခွင့်ပြုချက်မရှိပါ",
+      "Codec support":"Codec ပံ့ပိုးမှု","Must reflect installed engine":"ထည့်သွင်းထားသော Engine အခြေအနေအတိုင်း ဖြစ်ရမည်",
+      "Disk space":"Disk နေရာလွတ်","Not detectable here":"ဤနေရာမှ မသိရှိနိုင်ပါ",
+      "A completed job must verify that the output file exists and can be inspected. Never report success just because a process returned.":"ပြီးဆုံးသော Job တစ်ခုတွင် Output ဖိုင်ရှိကြောင်းနှင့် ဖွင့်စစ်ဆေးနိုင်ကြောင်း အတည်ပြုရမည်။ Process ပြီးဆုံးရုံဖြင့် အောင်မြင်သည်ဟု မကြေညာရပါ။",
+      "RTX 3050 6 GB / 16 GB RAM target profile":"RTX 3050 6 GB / 16 GB RAM ရည်မှန်းထားသော Hardware",
+      "Required before bundling engines":"Engine များ ထည့်သွင်းမထုပ်ပိုးမီ လိုအပ်သည်",
+      "Logs should redact prompts, secrets and local paths where appropriate":"Log များတွင် Prompt၊ Secret နှင့် Local Path များကို သင့်လျော်သလို ဖုံးကွယ်ရမည်",
+      "Design":"ဒီဇိုင်း","Not run":"မစစ်ဆေးရသေးပါ","Pending":"စောင့်ဆိုင်းနေသည်",
+      "A unique name used in stories and the library.":"ဇာတ်လမ်းများနှင့် စာကြည့်တိုက်တွင် အသုံးပြုမည့် သီးသန့်အမည်။",
+      "Examples: en, my, th, ja":"ဥပမာ - en, my",
+      "Optional unsigned 32-bit seed; only applied when supported.":"ရွေးချယ်နိုင်သော 32-bit Seed ဖြစ်သည်။ ပံ့ပိုးသောအခါမှသာ အသုံးပြုမည်။",
+      "Overall outline and recognizable shape.":"အလုံးစုံအပြင်ပုံနှင့် ခွဲခြားသိနိုင်သော ပုံသဏ္ဌာန်။",
+      "Head/body ratio, limb length, build.":"ဦးခေါင်းနှင့် ကိုယ်ခန္ဓာအချိုး၊ ခြေလက်အရှည်နှင့် ကိုယ်ထည်ဖွဲ့စည်းပုံ။",
+      "Shape, size, spacing, color.":"ပုံစံ၊ အရွယ်အစား၊ အကွာအဝေးနှင့် အရောင်။",
+      "Comma-separated color names.":"ကော်မာဖြင့် ခွဲရေးထားသော အရောင်အမည်များ။",
+      "Comma-separated; keep stable.":"ကော်မာဖြင့် ခွဲရေးပါ။ ပုံစံတည်ငြိမ်စွာ ထိန်းထားပါ။",
+      "Scars, spots, patterns, etc.":"အမာရွတ်၊ အစက်အပြောက်၊ ပုံစံများ စသည်။",
+      "Default canonical costume.":"မူရင်းအမြဲတမ်းဝတ်စုံ။",
+      "Features that must never change.":"မည်သည့်အခါမျှ မပြောင်းလဲရမည့် လက္ခဏာများ။",
+      "Comma-separated traits.":"ကော်မာဖြင့် ခွဲရေးထားသော စရိုက်လက္ခဏာများ။",
+      "A lovable weakness that drives original situations.":"စိတ်ဝင်စားဖွယ် မူရင်းအခြေအနေများ ဖြစ်ပေါ်စေသော ချစ်စရာအားနည်းချက်။",
+      "e.g. overconfidence, visual timing, harmless misunderstandings.":"ဥပမာ - ကိုယ့်ကိုယ်ကို ယုံကြည်လွန်ခြင်း၊ အချိန်ကိုက်ဟာသ၊ အန္တရာယ်မရှိသော နားလည်မှုလွဲခြင်း။",
+      "Voice design only; no voice model is generated here.":"အသံပုံစံဖော်ပြချက်သာ ဖြစ်သည်။ ဤနေရာတွင် Voice Model မဖန်တီးပါ။",
+      "Import approved images to help preserve identity. Use front, side, back and expression views where available.":"ဇာတ်ကောင်ပုံစံတူညီမှု ထိန်းသိမ်းရန် အတည်ပြုထားသော ကိုးကားပုံများ ထည့်ပါ။ ရှေ့၊ ဘေး၊ နောက်နှင့် မျက်နှာအမူအရာပုံများ အသုံးပြုနိုင်သည်။",
+      "Turnaround / expression sheet generation will be enabled after a verified local image workflow adapter is connected.":"Local Image Workflow Adapter ကို စမ်းသပ်အတည်ပြုပြီး ချိတ်ဆက်ပြီးမှ Turnaround / Expression Sheet ဖန်တီးမှုကို ဖွင့်ပါမည်။",
+      "Build original characters once, preserve their visual DNA and reuse them in future stories.":"မူရင်းဇာတ်ကောင်ကို တစ်ကြိမ်ဖန်တီးပြီး ရုပ်သွင် DNA ကို ထိန်းသိမ်းကာ နောက်ဇာတ်လမ်းများတွင် ပြန်သုံးပါ။",
+      "Profiles and small reference previews are saved in this browser only. Export a bundle to back up or move a character. This is not yet connected to project-folder storage or ComfyUI reference conditioning.":"Profile နှင့် ကိုးကားပုံ Preview များကို ဤ Browser ထဲတွင်သာ သိမ်းထားသည်။ Backup ပြုလုပ်ရန် သို့မဟုတ် အခြားနေရာသို့ ရွှေ့ရန် Bundle ထုတ်ယူပါ။ Project Folder Storage သို့မဟုတ် ComfyUI Reference Conditioning နှင့် မချိတ်ဆက်ရသေးပါ။",
+      "Each save creates a revision. Deletion requires confirmation.":"သိမ်းဆည်းမှုတိုင်းသည် Revision အသစ်ဖန်တီးသည်။ ဖျက်ရန် အတည်ပြုချက်လိုအပ်သည်။",
+      "The selected profile can be exported as a validated M7a-compatible JSON bundle. Storyboard binding is a later integration step.":"ရွေးချယ်ထားသော Profile ကို M7a နှင့် ကိုက်ညီသည့် JSON Bundle အဖြစ် ထုတ်ယူနိုင်သည်။ Storyboard ချိတ်ဆက်မှုကို နောက်အဆင့်တွင် ဆောင်ရွက်မည်။",
+      "Image stored in project bundle":"Project Bundle ထဲတွင် ပုံသိမ်းထားသည်",
+      "Could not import character bundle: ":"Character Bundle ထည့်သွင်း၍ မရပါ: ",
+      "Please enter a character name.":"ဇာတ်ကောင်အမည် ထည့်သွင်းပါ။",
+      "A character can have up to 20 reference images.":"ဇာတ်ကောင်တစ်ခုလျှင် ကိုးကားပုံ အများဆုံး ၂၀ ပုံ ထည့်နိုင်သည်။",
+      "Save the character first, then add reference images.":"ကိုးကားပုံမထည့်မီ ဇာတ်ကောင်ကို အရင်သိမ်းဆည်းပါ။",
+      "Only PNG, JPEG and WebP reference images are supported.":"PNG၊ JPEG နှင့် WebP ကိုးကားပုံများကိုသာ ပံ့ပိုးသည်။",
+      "Delete this character from this browser library? Export a backup first if needed.":"ဤ Browser စာကြည့်တိုက်မှ ဇာတ်ကောင်ကို ဖျက်မည်လား။ လိုအပ်ပါက Backup ကို အရင်ထုတ်ယူပါ။",
+      "Identity brief copied.":"ဇာတ်ကောင်အချက်အလက်ကို ကူးယူပြီးပါပြီ။",
+      "This prototype does not make network requests. Connection testing will be implemented in the desktop application.":"ဤနမူနာသည် Network Request မပြုလုပ်ပါ။ Desktop Application တွင် ချိတ်ဆက်မှုစမ်းသပ်ခြင်းကို ထည့်သွင်းမည်။",
+      "Theme is interactive. Other preferences are sample form values and are not persisted.":"Theme ကို ပြောင်းလဲနိုင်သည်။ အခြားစိတ်ကြိုက်တန်ဖိုးများသည် နမူနာသာဖြစ်ပြီး အမြဲတမ်းမသိမ်းဆည်းပါ။",
+      "Never move or delete existing model files automatically. Local/remote selection and data disclosure must be explicit.":"ရှိပြီးသား Model ဖိုင်များကို အလိုအလျောက် မရွှေ့ပါနှင့်၊ မဖျက်ပါနှင့်။ Local/Remote ရွေးချယ်မှုနှင့် ဒေတာပေးပို့မှုကို အသုံးပြုသူက အတိအလင်း အတည်ပြုရမည်။"
+,
       "A unique name used in stories and the library.":"ဇာတ်လမ်းများနှင့် စာကြည့်တိုက်တွင် အသုံးပြုမည့် သီးသန့်အမည်။",
       "Examples: en, my, th, ja":"ဥပမာ - en, my",
       "Optional unsigned 32-bit seed; only applied when supported.":"ရွေးချယ်နိုင်သော 32-bit Seed ဖြစ်သည်။ ပံ့ပိုးသောအခါမှသာ အသုံးပြုမည်။",
@@ -138,7 +227,14 @@
     const leading = source.match(/^\s*/)?.[0] || "";
     const trailing = source.match(/\s*$/)?.[0] || "";
     const key = language === "my" ? trimmed : (reverse[trimmed] || trimmed);
-    const result = language === "my" ? (dictionaries.my[key] || trimmed) : key;
+    let result = language === "my" ? (dictionaries.my[key] || trimmed) : key;
+    if (language === "my") {
+      const revision = trimmed.match(/^Revision (\\d+) · (\\d+) reference\\(s\\)$/);
+      if (revision) result = "Revision " + revision[1] + " · ကိုးကားပုံ " + revision[2] + " ပုံ";
+      if (trimmed.startsWith("Could not import character bundle: ")) {
+        result = "Character Bundle ထည့်သွင်း၍ မရပါ: " + trimmed.slice(34);
+      }
+    }
     return leading + result + trailing;
   };
   const translateElement = (root) => {
@@ -175,6 +271,12 @@
     apply();
   };
   const init = () => {
+    const originalAlert = window.alert.bind(window);
+    const originalConfirm = window.confirm.bind(window);
+    const originalPrompt = window.prompt.bind(window);
+    window.alert = (message) => originalAlert(translate(String(message)));
+    window.confirm = (message) => originalConfirm(translate(String(message)));
+    window.prompt = (message, value) => originalPrompt(translate(String(message)), value == null ? value : translate(String(value)));
     try { language = localStorage.getItem(STORAGE_KEY) === "my" ? "my" : "en"; }
     catch { language = "en"; }
     const quick = document.getElementById("languageQuick");
