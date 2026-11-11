@@ -37,7 +37,7 @@ def main() -> None:
         min_size=(900, 640),
         text_select=True,
     )
-    api.attach_window(window)
+    api._attach_window(window)
     webview.start(debug=False)
 
 
