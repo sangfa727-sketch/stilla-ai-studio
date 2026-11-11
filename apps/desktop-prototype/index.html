@@ -52,17 +52,34 @@
   <div class="row between" style="margin-top:14px"><span class="small muted">Task states must come from real workers.</span><button id="queueClear" class="quiet">Dismiss sample</button></div>
 </aside>
 <script src="i18n.js"></script>
+<script src="desktop-bridge.js"></script>
 <script src="characters.js"></script>
 <script>
 const pageNames={projects:["Projects","Your work, organized in one place."],script:["Script & Storyboard","Shape the story and review each scene before generating assets."],generate:["Generate","Choose an available runtime and create assets as explicit, trackable jobs."],edit:["Edit Studio","Arrange clips, audio and captions in a focused editing workspace."],assets:["Assets & History","Find imported media, generated results and prior job details."],export:["Export","Validate output settings before creating a final file."],settings:["Settings","Control appearance, language, local runtimes and data handling."],characters:["Character Creator","Create original characters and preserve their identity across future stories."]};
 const icons={projects:"▦",script:"✎",generate:"✧",edit:"▻",assets:"▤",export:"⇧",settings:"⚙"};
-let currentPage="projects",sampleQueue=true,scriptText="A quiet morning in a city waking up. Follow a baker opening the shop, steam rising from fresh bread, and the first customer arriving."; 
+let currentPage="projects",sampleQueue=true,scriptText="A quiet morning in a city waking up. Follow a baker opening the shop, steam rising from fresh bread, and the first customer arriving.";
+let activeProjectId=localStorage.getItem("stilla.active-project.v1")||"";
+let projectsCache=[];
 const main=document.getElementById("mainContent");
 function head(page,actions=""){const [title,desc]=pageNames[page];return '<div class="page-head"><div><div class="eyebrow">STILLA STUDIO / WORKSPACE</div><h1>'+title+'</h1><p>'+desc+'</p></div><div class="head-actions">'+actions+'</div></div>'}
 function card(title,body,extra=""){return '<section class="card '+extra+'"><div class="card-head"><h2>'+title+'</h2></div>'+body+'</section>'}
-function projectPage(){return head("projects",'<button id="importBtn">Import media</button><button class="primary" id="newProject">＋ New project</button>')+
-'<div class="grid cols-3" style="margin-bottom:18px"><div class="card"><div class="eyebrow">RECENT PROJECTS</div><div class="stat">04</div><div class="muted small">Illustrative sample</div></div><div class="card"><div class="eyebrow">ASSETS</div><div class="stat">18</div><div class="muted small">Imported and generated</div></div><div class="card"><div class="eyebrow">TASK QUEUE</div><div class="stat" id="projectQueueStat">02</div><div class="muted small">One unavailable runtime</div></div></div>'+
-'<div class="grid cols-2"><div class="card"><div class="card-head"><h2>Continue creating</h2><span class="pill">Demo data</span></div><div class="stack"><div class="tile" data-page="edit"><div class="tile-icon">▶</div><div><strong>Untitled film</strong><div class="muted">Last edited just now · 3 scenes · 00:42</div></div></div><div class="tile" data-page="script"><div class="tile-icon">✎</div><div><strong>Morning in the city</strong><div class="muted">Script draft · 6 scenes</div></div></div><div class="tile" data-page="generate"><div class="tile-icon">✧</div><div><strong>Visual mood exploration</strong><div class="muted">2 sample jobs · no real outputs</div></div></div></div></div><div class="card"><div class="card-head"><h2>Start with a workflow</h2><span class="pill">PC-first</span></div><div class="stack"><div class="tile" data-page="script"><div class="tile-icon">✎</div><div><strong>Plan a story</strong><div class="muted">Brief, script and storyboard</div></div></div><div class="tile" data-page="generate"><div class="tile-icon">✧</div><div><strong>Create media</strong><div class="muted">Model selection and generation jobs</div></div></div><div class="tile" data-page="edit"><div class="tile-icon">▻</div><div><strong>Edit a video</strong><div class="muted">Timeline, audio and captions</div></div></div><div class="tile" data-page="export"><div class="tile-icon">⇧</div><div><strong>Prepare an export</strong><div class="muted">Output format and validation</div></div></div></div></div></div><div class="footer-note">Prototype only. Project counts, save states and recent items are not backed by persistent storage.</div>'}
+function projectPage(){return head("projects",'<button id="chooseWorkspace">Choose workspace folder</button><button class="primary" id="newProject">＋ New project</button>')+
+'<section class="card"><div class="card-head"><div><h2>Local projects</h2><p class="small muted">Projects stay on this PC when using the desktop runtime.</p></div><span class="pill" id="projectCount">0 projects</span></div><div id="workspaceStatus" class="notice">Loading local workspace…</div><div id="projectList" class="stack" style="margin-top:14px"></div></section><div class="footer-note">Browser mode keeps its own project list in this browser. Desktop mode uses the selected local workspace folder.</div>'}
+function escapeHtml(value){return String(value??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+async function refreshProjects(){
+ const status=document.getElementById("workspaceStatus"),list=document.getElementById("projectList");
+ if(!status||!list)return;
+ try{
+  projectsCache=window.STILLABridge?.isDesktop()?await window.STILLABridge.listProjects():JSON.parse(localStorage.getItem("stilla.projects.v1")||"[]");
+  if(!Array.isArray(projectsCache))projectsCache=[];
+  document.getElementById("projectCount").textContent=projectsCache.length+" project(s)";
+  const activeProject=projectsCache.find(project=>project.id===activeProjectId);
+  if(activeProject)document.getElementById("projectLabel").textContent=activeProject.title;
+  status.textContent=window.STILLABridge?.isDesktop()?"Desktop workspace: "+(await window.STILLABridge.runtimeInfo()).workspace_root:"Browser-only project storage";
+  list.innerHTML=projectsCache.length?projectsCache.map(p=>'<button class="tile" type="button" data-project-id="'+escapeHtml(p.id)+'" style="width:100%;text-align:left;border-color:'+(p.id===activeProjectId?"var(--accent)":"var(--line)")+'"><div class="tile-icon">▦</div><div><strong>'+escapeHtml(p.title)+'</strong><div class="muted small">'+escapeHtml(p.updated_at||p.created_at||"")+(p.id===activeProjectId?" · Selected":"")+'</div></div></button>').join(""):'<div class="character-empty">No projects yet. Create a project to begin.</div>';
+  list.querySelectorAll("[data-project-id]").forEach(button=>button.addEventListener("click",()=>{activeProjectId=button.dataset.projectId;localStorage.setItem("stilla.active-project.v1",activeProjectId);const project=projectsCache.find(p=>p.id===activeProjectId);document.getElementById("projectLabel").textContent=project?.title||"STILLA Project";document.getElementById("saveState").textContent="Project selected";refreshProjects();}));
+ }catch(error){status.textContent="Workspace error: "+error.message;status.className="notice warn";list.replaceChildren();}
+}
 function scriptPage(){return head("script",'<button class="quiet" id="scriptReset">Reset sample</button><button class="primary" id="saveScript">Save draft</button>')+
 '<div class="grid" style="grid-template-columns:minmax(180px,.8fr) minmax(260px,1.5fr) minmax(190px,.8fr)"><section class="card"><div class="card-head"><h2>Scenes</h2><button id="addScene">＋</button></div><div class="stack" id="sceneList"><div class="tile"><div class="tile-icon">01</div><div><strong>First light</strong><div class="muted">Wide shot · 8 sec</div></div></div><div class="tile"><div class="tile-icon">02</div><div><strong>Fresh bread</strong><div class="muted">Close-up · 12 sec</div></div></div><div class="tile"><div class="tile-icon">03</div><div><strong>First customer</strong><div class="muted">Medium shot · 10 sec</div></div></div></div><p class="small">Scene list is sample data; reorder is not implemented yet.</p></section><section class="card"><div class="card-head"><h2>Script draft</h2><span class="pill">Version 1</span></div><div class="field"><label for="scriptText">Narration / scene description</label><textarea id="scriptText">'+scriptText+'</textarea></div><div class="row between"><span class="small muted" id="scriptStatus">Unsaved sample text</span><button id="addToStory">Add scene note</button></div><div id="storyNote" class="notice hidden" style="margin-top:12px">Scene note added to this prototype view.</div></section><section class="card"><h2>Scene properties</h2><div class="field"><label for="sceneDuration">Target duration</label><select id="sceneDuration"><option>8 seconds</option><option>12 seconds</option><option>15 seconds</option><option>30 seconds</option></select></div><div class="field"><label for="sceneMood">Visual mood</label><select id="sceneMood"><option>Warm, natural light</option><option>Cinematic, high contrast</option><option>Documentary realism</option><option>Soft illustration</option></select></div><div class="field"><label for="aspect">Aspect ratio</label><select id="aspect"><option>16:9 — landscape</option><option>9:16 — vertical</option><option>1:1 — square</option></select></div><div class="notice">AI revisions must create a new version or explicit draft; never silently replace approved content.</div></section></div>'}
 function generatePage(){return head("generate",'<button class="quiet" id="checkRuntime">Check runtime</button><button class="primary" id="queueGeneration">Queue sample job</button>')+
@@ -76,12 +93,51 @@ function exportPage(){return head("export",'<button class="quiet" id="validateEx
 function settingsPage(){return head("settings",'<button class="primary" id="saveSettings">Save preferences</button>')+
 '<div class="grid cols-2"><section class="card"><h2>Appearance & language</h2><div class="field"><label for="themeSelect">Theme</label><select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select></div><div class="field"><label for="language">Language</label><select id="language"><option value="en">English</option><option value="my">မြန်မာ</option></select></div><div class="field"><label for="motion">Motion</label><select id="motion"><option>Respect system preference</option><option>Reduced motion</option></select></div><div class="notice">Theme is interactive. Other preferences are sample form values and are not persisted.</div></section><section class="card"><h2>Models & runtimes</h2><div class="field"><label for="providerUrl">Local OpenAI-compatible endpoint</label><input id="providerUrl" value="http://127.0.0.1:1234/v1"></div><div class="field"><label for="providerModel">Text model ID</label><input id="providerModel" value="qwen2.5-7b-instruct-uncensored"></div><div class="row"><button id="testConnection">Test connection</button><span class="pill warn" id="connectionStatus">Not tested</span></div><p class="small muted" id="connectionMessage">This prototype does not make network requests. Connection testing will be implemented in the desktop application.</p></section><section class="card"><h2>Storage & privacy</h2><div class="field"><label for="storagePath">Project storage folder</label><input id="storagePath" value="Not selected"></div><div class="notice">Never move or delete existing model files automatically. Local/remote selection and data disclosure must be explicit.</div></section><section class="card"><h2>Performance & diagnostics</h2><div class="list-item"><div class="meta"><strong>Hardware capability check</strong><span class="small muted">RTX 3050 6 GB / 16 GB RAM target profile</span></div><span class="pill warn">Not run</span></div><div class="list-item"><div class="meta"><strong>Dependency / license audit</strong><span class="small muted">Required before bundling engines</span></div><span class="pill warn">Pending</span></div><div class="list-item"><div class="meta"><strong>Diagnostics</strong><span class="small muted">Logs should redact prompts, secrets and local paths where appropriate</span></div><span class="pill">Design</span></div></section></div>'}
 const renderers={projects:projectPage,script:scriptPage,generate:generatePage,edit:editPage,assets:assetsPage,export:exportPage,settings:settingsPage,characters:()=>window.STILLACharacterUI.render()};
-function render(page=currentPage){currentPage=page;document.querySelectorAll(".nav").forEach(b=>{if(b.dataset.page===page)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});main.innerHTML=renderers[page]();main.focus({preventScroll:true});wirePage();window.STILLAI18N?.refresh();window.scrollTo({top:0,behavior:"auto"})}
+function render(page=currentPage){
+ currentPage=page;
+ document.querySelectorAll(".nav").forEach(b=>{if(b.dataset.page===page)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+ if(page==="characters"&&window.STILLABridge?.isDesktop()&&!activeProjectId){
+  main.innerHTML='<section class="card"><h2>Select a project first</h2><p class="muted">Create or select a local project before opening its Character Library.</p><button class="primary" id="goProjects">Open Projects</button></section>';
+  document.getElementById("goProjects").onclick=()=>render("projects");
+  return;
+ }
+ if(page==="characters"){
+  main.innerHTML='<div class="notice">Loading project characters…</div>';
+  window.STILLACharacterUI.loadProject(activeProjectId).then(()=>{
+   main.innerHTML=renderers[page]();main.focus({preventScroll:true});wirePage();window.STILLAI18N?.refresh();
+  }).catch(error=>{
+   main.innerHTML='<div class="notice warn">Could not load this project\'s characters: '+escapeHtml(error.message)+'</div>';
+  });
+  window.scrollTo({top:0,behavior:"auto"});
+  return;
+ }
+ main.innerHTML=renderers[page]();main.focus({preventScroll:true});wirePage();window.STILLAI18N?.refresh();window.scrollTo({top:0,behavior:"auto"});
+}
 function wirePage(){
 if(currentPage==="characters")window.STILLACharacterUI.wire();
+if(currentPage==="projects")refreshProjects();
 main.querySelectorAll("[data-page]").forEach(el=>el.addEventListener("click",()=>render(el.dataset.page)));
 const $=id=>document.getElementById(id);
-if($("newProject"))$("newProject").onclick=()=>{const name=prompt("Project name","Untitled film");if(name&&name.trim()){$("projectLabel").textContent=name.trim();$("saveState").textContent="Unsaved · prototype";$("saveState").classList.add("warn")}};
+if($("newProject"))$("newProject").onclick=async()=>{
+ const name=prompt("Project name","Untitled film");if(!name||!name.trim())return;
+ try{
+  let project;
+  if(window.STILLABridge?.isDesktop())project=await window.STILLABridge.createProject(name.trim(),"en");
+  else{
+   const items=JSON.parse(localStorage.getItem("stilla.projects.v1")||"[]");
+   project={id:window.crypto?.randomUUID?.().replace(/-/g,"")||("p"+Date.now().toString(36)),title:name.trim(),created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+   localStorage.setItem("stilla.projects.v1",JSON.stringify([project,...items]));
+  }
+  activeProjectId=project.id;localStorage.setItem("stilla.active-project.v1",activeProjectId);
+  $("projectLabel").textContent=project.title;$("saveState").textContent="Project created";
+  await refreshProjects();
+ }catch(error){alert("Could not create project: "+error.message);}
+};
+if($("chooseWorkspace"))$("chooseWorkspace").onclick=async()=>{
+ if(!window.STILLABridge?.isDesktop()){alert("Choose workspace is available in the PyWebView desktop app.");return;}
+ try{const result=await window.STILLABridge.chooseWorkspace();if(!result.cancelled){activeProjectId="";localStorage.removeItem("stilla.active-project.v1");$("projectLabel").textContent="STILLA Project";await refreshProjects();}}
+ catch(error){alert("Could not select workspace: "+error.message);}
+};
 if($("importBtn"))$("importBtn").onclick=()=>alert("Media import is not connected in this UX prototype.");
 if($("scriptText"))$("scriptText").oninput=()=>{ $("scriptStatus").textContent="Unsaved changes";$("saveState").textContent="Unsaved · prototype"};
 if($("saveScript"))$("saveScript").onclick=()=>{$("scriptStatus").textContent="Draft saved in this view only";$("saveState").textContent="Saved locally · prototype";scriptText=$("scriptText").value};
@@ -107,6 +163,7 @@ if($("testConnection"))$("testConnection").onclick=()=>{$("connectionStatus").te
 }
 function setTheme(theme){document.documentElement.dataset.theme=theme;const sel=document.getElementById("themeSelect");if(sel)sel.value=theme}
 document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>render(b.dataset.page)));
+window.addEventListener("pywebviewready",()=>{if(currentPage==="projects")refreshProjects();else if(currentPage==="characters")render("characters");});
 document.getElementById("themeToggle").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="light"?"dark":"light"));
 document.getElementById("queueToggle").addEventListener("click",()=>{const panel=document.getElementById("queuePanel");panel.classList.toggle("hidden");document.getElementById("queueToggle").setAttribute("aria-expanded",String(!panel.classList.contains("hidden")))});
 document.getElementById("queueClose").addEventListener("click",()=>document.getElementById("queuePanel").classList.add("hidden"));

@@ -30,7 +30,7 @@ def main() -> None:
     api = DesktopWorkspaceAPI()
     window = webview.create_window(
         "STILLA AI Studio",
-        url=prototype.as_uri(),
+        url=f"{prototype.as_uri()}?runtime=desktop",
         js_api=api,
         width=1440,
         height=900,
