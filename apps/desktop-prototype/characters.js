@@ -117,7 +117,7 @@
       return '<div class="character-ref-card">' + (preview ? '<img src="' + preview + '" alt="Reference image ' + esc(ref.role) + '">' : '<div class="character-ref-placeholder">Image stored in project bundle</div>') +
         '<div><strong>' + esc(ref.role) + '</strong><small>' + esc(ref.asset_id) + '</small></div><button type="button" class="quiet" data-remove-ref="' + esc(ref.asset_id) + '" aria-label="Remove reference">Remove</button></div>';
     }).join("") : "";
-    return '<div class="page-head"><div><div class="eyebrow">STILLA STUDIO / CHARACTER WORKSPACE</div><h1>Character Creator</h1><p>Build original characters once, preserve their visual DNA and reuse them in future stories.</p></div><div class="head-actions"><button id="newCharacter">＋ New character</button><button id="exportCharacter" ' + (current ? "" : "disabled") + '>Export bundle</button><button id="deleteCharacter" class="quiet" ' + (current ? "" : "disabled") + '>Delete</button></div></div>' +
+    return '<div class="page-head"><div><div class="eyebrow">STILLA STUDIO / CHARACTER WORKSPACE</div><h1>Character Creator</h1><p>Build original characters once, preserve their visual DNA and reuse them in future stories.</p></div><div class="head-actions"><button id="newCharacter">＋ New character</button><button id="importCharacterBundle">Import bundle</button><input id="characterBundleInput" type="file" accept="application/json,.json" hidden><button id="exportCharacter" ' + (current ? "" : "disabled") + '>Export bundle</button><button id="deleteCharacter" class="quiet" ' + (current ? "" : "disabled") + '>Delete</button></div></div>' +
       '<div class="character-prototype-notice"><strong>Local browser prototype</strong><span>Profiles and small reference previews are saved in this browser only. Export a bundle to back up or move a character. This is not yet connected to project-folder storage or ComfyUI reference conditioning.</span></div>' +
       '<div class="character-workspace"><aside class="card character-library"><div class="card-head"><div><span class="eyebrow">YOUR CAST</span><h2>Character Library</h2></div><span class="pill">' + items.length + ' / ' + MAX_PROFILE_COUNT + '</span></div><input id="characterSearch" type="search" placeholder="Search characters…" value="' + esc(query) + '" aria-label="Search characters"><div class="character-library-list">' + library + '</div><div class="character-library-foot small muted">Each save creates a revision. Deletion requires confirmation.</div></aside>' +
       '<div class="character-editor">' + profileForm(current) +
@@ -225,6 +225,46 @@
       delete record.reference_previews[id]; record.revision += 1; record.updated_at = new Date().toISOString();
       try { writeLibrary(items); render(); } catch (error) { alert(error.message); }
     }));
+    $("importCharacterBundle")?.addEventListener("click", () => $("characterBundleInput")?.click());
+    $("characterBundleInput")?.addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      try {
+        if (!file) return;
+        if (file.size > MAX_TOTAL_BYTES) throw new Error("Character bundle exceeds the 3 MB import limit.");
+        const bundle = JSON.parse(await file.text());
+        if (bundle.format !== "stilla-character-bundle" || bundle.bundle_version !== 1) throw new Error("Unsupported character bundle format.");
+        const profile = bundle.profile;
+        if (!profile || profile.schema_version !== 1 || typeof profile.name !== "string" ||
+            !profile.visual || !profile.personality || !Array.isArray(profile.references)) {
+          throw new Error("Character bundle does not contain a valid profile.");
+        }
+        const items = readLibrary();
+        if (items.length >= MAX_PROFILE_COUNT) throw new Error("The browser prototype supports up to 30 saved characters.");
+        const previews = {};
+        const refs = profile.references.map((ref) => {
+          const assetId = freshId();
+          const dataUrl = bundle.reference_previews?.[ref.asset_id];
+          let extension = "png";
+          if (typeof dataUrl === "string") {
+            const match = dataUrl.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/);
+            if (!match || dataUrl.length > MAX_REFERENCE_BYTES * 1.5) throw new Error("A reference image in this bundle is invalid or too large.");
+            extension = match[1] === "jpeg" ? "jpg" : match[1];
+            previews[assetId] = dataUrl;
+          }
+          return { asset_id: assetId, relative_path: "references/" + assetId + "." + extension,
+            role: typeof ref.role === "string" ? ref.role.slice(0, 100) : "reference", sha256: "" };
+        });
+        profile.id = freshId();
+        profile.references = refs;
+        const record = { profile, revision: 1, updated_at: new Date().toISOString(), reference_previews: previews };
+        writeLibrary([record, ...items]);
+        selectedId = profile.id; draftPreviews = {}; render();
+      } catch (error) {
+        alert("Could not import character bundle: " + error.message);
+      } finally {
+        event.target.value = "";
+      }
+    });
     $("exportCharacter")?.addEventListener("click", () => { const record = selectedRecord(); if (record) downloadBundle(record); });
     $("deleteCharacter")?.addEventListener("click", () => {
       const record = selectedRecord(); if (!record) return;
