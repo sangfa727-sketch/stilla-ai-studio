@@ -91,12 +91,51 @@ function exportPage(){return head("export",'<button class="quiet" id="validateEx
 function settingsPage(){return head("settings",'<button class="primary" id="saveSettings">Save preferences</button>')+
 '<div class="grid cols-2"><section class="card"><h2>Appearance & language</h2><div class="field"><label for="themeSelect">Theme</label><select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select></div><div class="field"><label for="language">Language</label><select id="language"><option value="en">English</option><option value="my">မြန်မာ</option></select></div><div class="field"><label for="motion">Motion</label><select id="motion"><option>Respect system preference</option><option>Reduced motion</option></select></div><div class="notice">Theme is interactive. Other preferences are sample form values and are not persisted.</div></section><section class="card"><h2>Models & runtimes</h2><div class="field"><label for="providerUrl">Local OpenAI-compatible endpoint</label><input id="providerUrl" value="http://127.0.0.1:1234/v1"></div><div class="field"><label for="providerModel">Text model ID</label><input id="providerModel" value="qwen2.5-7b-instruct-uncensored"></div><div class="row"><button id="testConnection">Test connection</button><span class="pill warn" id="connectionStatus">Not tested</span></div><p class="small muted" id="connectionMessage">This prototype does not make network requests. Connection testing will be implemented in the desktop application.</p></section><section class="card"><h2>Storage & privacy</h2><div class="field"><label for="storagePath">Project storage folder</label><input id="storagePath" value="Not selected"></div><div class="notice">Never move or delete existing model files automatically. Local/remote selection and data disclosure must be explicit.</div></section><section class="card"><h2>Performance & diagnostics</h2><div class="list-item"><div class="meta"><strong>Hardware capability check</strong><span class="small muted">RTX 3050 6 GB / 16 GB RAM target profile</span></div><span class="pill warn">Not run</span></div><div class="list-item"><div class="meta"><strong>Dependency / license audit</strong><span class="small muted">Required before bundling engines</span></div><span class="pill warn">Pending</span></div><div class="list-item"><div class="meta"><strong>Diagnostics</strong><span class="small muted">Logs should redact prompts, secrets and local paths where appropriate</span></div><span class="pill">Design</span></div></section></div>'}
 const renderers={projects:projectPage,script:scriptPage,generate:generatePage,edit:editPage,assets:assetsPage,export:exportPage,settings:settingsPage,characters:()=>window.STILLACharacterUI.render()};
-function render(page=currentPage){currentPage=page;document.querySelectorAll(".nav").forEach(b=>{if(b.dataset.page===page)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});main.innerHTML=renderers[page]();main.focus({preventScroll:true});wirePage();window.STILLAI18N?.refresh();window.scrollTo({top:0,behavior:"auto"})}
+function render(page=currentPage){
+ currentPage=page;
+ document.querySelectorAll(".nav").forEach(b=>{if(b.dataset.page===page)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+ if(page==="characters"&&window.STILLABridge?.isDesktop()&&!activeProjectId){
+  main.innerHTML='<section class="card"><h2>Select a project first</h2><p class="muted">Create or select a local project before opening its Character Library.</p><button class="primary" id="goProjects">Open Projects</button></section>';
+  document.getElementById("goProjects").onclick=()=>render("projects");
+  return;
+ }
+ if(page==="characters"){
+  main.innerHTML='<div class="notice">Loading project characters…</div>';
+  window.STILLACharacterUI.loadProject(activeProjectId).then(()=>{
+   main.innerHTML=renderers[page]();main.focus({preventScroll:true});wirePage();window.STILLAI18N?.refresh();
+  }).catch(error=>{
+   main.innerHTML='<div class="notice warn">Could not load this project\'s characters: '+escapeHtml(error.message)+'</div>';
+  });
+  window.scrollTo({top:0,behavior:"auto"});
+  return;
+ }
+ main.innerHTML=renderers[page]();main.focus({preventScroll:true});wirePage();window.STILLAI18N?.refresh();window.scrollTo({top:0,behavior:"auto"});
+}
 function wirePage(){
 if(currentPage==="characters")window.STILLACharacterUI.wire();
+if(currentPage==="projects")refreshProjects();
 main.querySelectorAll("[data-page]").forEach(el=>el.addEventListener("click",()=>render(el.dataset.page)));
 const $=id=>document.getElementById(id);
-if($("newProject"))$("newProject").onclick=()=>{const name=prompt("Project name","Untitled film");if(name&&name.trim()){$("projectLabel").textContent=name.trim();$("saveState").textContent="Unsaved · prototype";$("saveState").classList.add("warn")}};
+if($("newProject"))$("newProject").onclick=async()=>{
+ const name=prompt("Project name","Untitled film");if(!name||!name.trim())return;
+ try{
+  let project;
+  if(window.STILLABridge?.isDesktop())project=await window.STILLABridge.createProject(name.trim(),"en");
+  else{
+   const items=JSON.parse(localStorage.getItem("stilla.projects.v1")||"[]");
+   project={id:window.crypto?.randomUUID?.().replace(/-/g,"")||("p"+Date.now().toString(36)),title:name.trim(),created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+   localStorage.setItem("stilla.projects.v1",JSON.stringify([project,...items]));
+  }
+  activeProjectId=project.id;localStorage.setItem("stilla.active-project.v1",activeProjectId);
+  $("projectLabel").textContent=project.title;$("saveState").textContent="Project created";
+  await refreshProjects();
+ }catch(error){alert("Could not create project: "+error.message);}
+};
+if($("chooseWorkspace"))$("chooseWorkspace").onclick=async()=>{
+ if(!window.STILLABridge?.isDesktop()){alert("Choose workspace is available in the PyWebView desktop app.");return;}
+ try{const result=await window.STILLABridge.chooseWorkspace();if(!result.cancelled){activeProjectId="";localStorage.removeItem("stilla.active-project.v1");$("projectLabel").textContent="STILLA Project";await refreshProjects();}}
+ catch(error){alert("Could not select workspace: "+error.message);}
+};
 if($("importBtn"))$("importBtn").onclick=()=>alert("Media import is not connected in this UX prototype.");
 if($("scriptText"))$("scriptText").oninput=()=>{ $("scriptStatus").textContent="Unsaved changes";$("saveState").textContent="Unsaved · prototype"};
 if($("saveScript"))$("saveScript").onclick=()=>{$("scriptStatus").textContent="Draft saved in this view only";$("saveState").textContent="Saved locally · prototype";scriptText=$("scriptText").value};
