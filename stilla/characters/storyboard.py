@@ -202,7 +202,7 @@ def bind_character_to_shots(
         raise TypeError("document must be a CharacterBoundShotPlan")
     snapshot = CharacterRevisionSnapshot(revision=revision, profile=character)
     available = {shot.id for shot in document.shot_plan.shots}
-    selected = tuple(available if shot_ids is None else shot_ids)
+    selected = tuple(shot.id for shot in document.shot_plan.shots) if shot_ids is None else tuple(shot_ids)
     if not selected or len(selected) != len(set(selected)) or any(item not in available for item in selected):
         raise StoryboardBindingError("selected shot IDs must be unique existing shots")
     revisions = {
