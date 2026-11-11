@@ -232,7 +232,13 @@
       const revision = trimmed.match(/^Revision (\\d+) · (\\d+) reference\\(s\\)$/);
       if (revision) result = "Revision " + revision[1] + " · ကိုးကားပုံ " + revision[2] + " ပုံ";
       if (trimmed.startsWith("Could not import character bundle: ")) {
-        result = "Character Bundle ထည့်သွင်း၍ မရပါ: " + trimmed.slice(34);
+        result = "Character Bundle ထည့်သွင်း၍ မရပါ: " + trimmed.slice(35);
+      }
+    } else {
+      const revision = trimmed.match(/^Revision (\\d+) · ကိုးကားပုံ (\\d+) ပုံ$/);
+      if (revision) result = "Revision " + revision[1] + " · " + revision[2] + " reference(s)";
+      if (trimmed.startsWith("Character Bundle ထည့်သွင်း၍ မရပါ: ")) {
+        result = "Could not import character bundle: " + trimmed.slice(35);
       }
     }
     return leading + result + trailing;
