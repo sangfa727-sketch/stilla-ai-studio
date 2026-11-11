@@ -43,7 +43,7 @@ class DesktopWorkspaceAPI:
         self._window: Any = None
         self._workspace = ProjectWorkspace(workspace_root or default_root)
 
-    def attach_window(self, window: Any) -> None:
+    def _attach_window(self, window: Any) -> None:
         self._window = window
 
     def get_runtime_info(self) -> dict[str, Any]:
