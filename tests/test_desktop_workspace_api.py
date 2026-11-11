@@ -77,6 +77,46 @@ def test_character_profile_round_trip_is_inside_project(api: DesktopWorkspaceAPI
             "hero_01.character.json").is_file()
 
 
+def test_character_profiles_are_listed_only_within_the_selected_project(api: DesktopWorkspaceAPI) -> None:
+    first = _project(api)
+    second = _project(api)
+    api.save_character_profile(first, _profile())
+    other = _profile()
+    other["id"] = "hero_02"
+    other["name"] = "Other"
+    api.save_character_profile(second, other)
+
+    assert [item["id"] for item in api.list_character_profiles(first)] == ["hero_01"]
+    assert [item["id"] for item in api.list_character_profiles(second)] == ["hero_02"]
+
+
+def test_character_profile_delete_is_project_scoped(api: DesktopWorkspaceAPI) -> None:
+    first = _project(api)
+    second = _project(api)
+    api.save_character_profile(first, _profile())
+    other = _profile()
+    other["id"] = "hero_01"
+    api.save_character_profile(second, other)
+
+    assert api.delete_character_profile(first, "hero_01") == {
+        "deleted": True, "character_id": "hero_01"
+    }
+    assert api.list_character_profiles(first) == []
+    assert api.load_character_profile(second, "hero_01")["name"] == "Pip"
+
+
+def test_character_profile_delete_rejects_symlink(api: DesktopWorkspaceAPI, tmp_path: Path) -> None:
+    project_id = _project(api)
+    outside = tmp_path / "outside.character.json"
+    outside.write_text("{}", encoding="utf-8")
+    directory = api._workspace.root / "projects" / project_id / "characters"
+    directory.mkdir()
+    (directory / "hero_01.character.json").symlink_to(outside)
+    with pytest.raises(DesktopAPIError, match="unsafe"):
+        api.delete_character_profile(project_id, "hero_01")
+    assert outside.read_text(encoding="utf-8") == "{}"
+
+
 def test_rejects_invalid_character_profile(api: DesktopWorkspaceAPI) -> None:
     with pytest.raises(DesktopAPIError):
         api.save_character_profile(_project(api), {"id": "../bad"})
