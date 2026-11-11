@@ -49,8 +49,11 @@ def sample_character() -> CharacterProfile:
             reaction_style="freezes, blinks twice, then pretends it was intentional",
             relationship_dynamic="competes playfully with a cautious best friend",
             running_gag="his inventions solve a tiny problem but create a sillier one",
+            avoid=("mean-spirited humor",),
         ),
         references=(CharacterReference("pogo_master", "characters/pogo/front.png", "front"),),
+        voice_description="bright youthful mid-range voice with quick comic pauses",
+        canonical_seed=24680,
     )
 
 
@@ -83,6 +86,10 @@ def test_generation_plan_locks_visual_identity_but_allows_scene_pose_and_express
     assert plan.reference_paths == ("characters/pogo/front.png",)
     assert "changed costume" in plan.negative_prompt
     assert "outfit" in plan.locked_fields
+    assert "overconfident little inventor" in plan.prompt
+    assert "I planned that. Mostly." in plan.prompt
+    assert "mean-spirited humor" in plan.prompt
+    assert plan.seed == 24680
 
 
 def test_costume_change_requires_explicit_permission() -> None:
