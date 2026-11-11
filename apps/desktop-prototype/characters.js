@@ -5,7 +5,9 @@
   const MAX_REFERENCE_BYTES = 512 * 1024;
   const MAX_TOTAL_BYTES = 3 * 1024 * 1024;
   let selectedId = null;
+  let activeProjectId = null;
   let draftPreviews = {};
+  const storageKey = () => activeProjectId ? KEY + "." + activeProjectId : KEY;
   let query = "";
 
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -15,7 +17,7 @@
   const joinList = (value) => Array.isArray(value) ? value.join(", ") : "";
   const readLibrary = () => {
     try {
-      const value = JSON.parse(localStorage.getItem(KEY) || "[]");
+      const value = JSON.parse(localStorage.getItem(storageKey()) || "[]");
       return Array.isArray(value) ? value.filter((item) =>
         item && item.profile && typeof item.profile.id === "string"
       ) : [];
@@ -28,7 +30,7 @@
     if (encoded.length > MAX_TOTAL_BYTES) {
       throw new Error("Character library reached its 3 MB browser-storage limit. Export profiles and reduce reference image sizes.");
     }
-    localStorage.setItem(KEY, encoded);
+    localStorage.setItem(storageKey(), encoded);
   };
   const freshId = () => {
     if (window.crypto && typeof window.crypto.randomUUID === "function") {
@@ -118,10 +120,10 @@
         '<div><strong>' + esc(ref.role) + '</strong><small>' + esc(ref.asset_id) + '</small></div><button type="button" class="quiet" data-remove-ref="' + esc(ref.asset_id) + '" aria-label="Remove reference">Remove</button></div>';
     }).join("") : "";
     return '<div class="page-head"><div><div class="eyebrow">STILLA STUDIO / CHARACTER WORKSPACE</div><h1>Character Creator</h1><p>Build original characters once, preserve their visual DNA and reuse them in future stories.</p></div><div class="head-actions"><button id="newCharacter">＋ New character</button><button id="importCharacterBundle">Import bundle</button><input id="characterBundleInput" type="file" accept="application/json,.json" hidden><button id="exportCharacter" ' + (current ? "" : "disabled") + '>Export bundle</button><button id="deleteCharacter" class="quiet" ' + (current ? "" : "disabled") + '>Delete</button></div></div>' +
-      '<div class="character-prototype-notice"><strong>Local browser prototype</strong><span>Profiles and small reference previews are saved in this browser only. Export a bundle to back up or move a character. This is not yet connected to project-folder storage or ComfyUI reference conditioning.</span></div>' +
+      '<div class="character-prototype-notice"><strong>' + (window.STILLABridge?.isDesktop() ? 'Project-local desktop storage' : 'Local browser prototype') + '</strong><span>' + (window.STILLABridge?.isDesktop() ? 'Profiles and imported reference files are stored inside the selected local project. Reference conditioning is not connected yet.' : 'Profiles and small reference previews are saved in this browser only. Export a bundle to back up or move a character.') + '</span></div>' +
       '<div class="character-workspace"><aside class="card character-library"><div class="card-head"><div><span class="eyebrow">YOUR CAST</span><h2>Character Library</h2></div><span class="pill">' + items.length + ' / ' + MAX_PROFILE_COUNT + '</span></div><input id="characterSearch" type="search" placeholder="Search characters…" value="' + esc(query) + '" aria-label="Search characters"><div class="character-library-list">' + library + '</div><div class="character-library-foot small muted">Each save creates a revision. Deletion requires confirmation.</div></aside>' +
       '<div class="character-editor">' + profileForm(current) +
-      '<section class="card character-reference-section"><div class="character-section-head"><div><span class="eyebrow">04 / REFERENCE IMAGES</span><h2>Canonical visual references</h2><p class="small muted">Import approved images to help preserve identity. Use front, side, back and expression views where available.</p></div><label class="button-like" for="characterReferenceInput">＋ Add reference</label><input id="characterReferenceInput" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden></div>' +
+      '<section class="card character-reference-section"><div class="character-section-head"><div><span class="eyebrow">04 / REFERENCE IMAGES</span><h2>Canonical visual references</h2><p class="small muted">Import approved images to help preserve identity. Use front, side, back and expression views where available.</p></div>' + (window.STILLABridge?.isDesktop() ? '<button type="button" id="importNativeReference">＋ Import from PC</button>' : '<label class="button-like" for="characterReferenceInput">＋ Add reference</label><input id="characterReferenceInput" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden>') + '</div>' +
       '<div class="character-reference-grid">' + (refs || '<div class="character-empty">No reference images added yet.</div>') + '</div>' +
       '<div class="row between character-sheet-row"><div><strong>Character reference sheet</strong><p class="small muted">Turnaround / expression sheet generation will be enabled after a verified local image workflow adapter is connected.</p></div><button type="button" disabled title="Local reference-sheet workflow is not connected">Generate sheet · unavailable</button></div></section>' +
       '<div class="character-use-row"><div><strong>Reuse in Script & Storyboard</strong><p class="small muted">The selected profile can be exported as a validated M7a-compatible JSON bundle. Storyboard binding is a later integration step.</p></div><button type="button" id="copyCharacterPrompt" ' + (current ? "" : "disabled") + '>Copy identity brief</button></div>' +
@@ -180,9 +182,10 @@
     $("newCharacter")?.addEventListener("click", () => { selectedId = null; draftPreviews = {}; render(); });
     $("characterSearch")?.addEventListener("input", (event) => { query = event.target.value.toLowerCase(); const pos = event.target.selectionStart; render(); const input = $("characterSearch"); input.focus(); input.setSelectionRange(pos, pos); });
     document.querySelectorAll("[data-character-id]").forEach((button) => button.addEventListener("click", () => { selectedId = button.dataset.characterId; draftPreviews = {}; render(); }));
-    $("characterForm")?.addEventListener("submit", (event) => {
+    $("characterForm")?.addEventListener("submit", async (event) => {
       event.preventDefault();
       try {
+        if (window.STILLABridge?.isDesktop() && !activeProjectId) throw new Error("Select a local project before saving a character.");
         const items = readLibrary();
         const prior = selectedRecord();
         const profile = collectProfile(event.currentTarget, prior?.profile || null);
@@ -190,6 +193,7 @@
         const record = { profile, revision: (prior?.revision || 0) + 1,
           updated_at: new Date().toISOString(),
           reference_previews: { ...(prior?.reference_previews || {}), ...draftPreviews } };
+        if (window.STILLABridge?.isDesktop()) await window.STILLABridge.saveCharacter(activeProjectId, profile);
         const next = items.filter((item) => item.profile.id !== profile.id);
         next.unshift(record);
         writeLibrary(next);
@@ -200,6 +204,23 @@
         const status = $("characterFormStatus");
         if (status) { status.textContent = error.message; status.classList.add("error"); }
       }
+    });
+    $("importNativeReference")?.addEventListener("click", async () => {
+      try {
+        const record = selectedRecord();
+        if (!record) throw new Error("Save the character first, then import reference images.");
+        if (record.profile.references.length >= 20) throw new Error("A character can have up to 20 reference images.");
+        const imported = await window.STILLABridge.importCharacterReference(activeProjectId, selectedId);
+        if (imported.cancelled) return;
+        const items = readLibrary();
+        const current = items.find((item) => item.profile.id === selectedId);
+        current.profile.references.push({ asset_id: imported.asset_id, relative_path: imported.relative_path, role: "reference", sha256: imported.sha256 });
+        current.revision += 1;
+        current.updated_at = new Date().toISOString();
+        await window.STILLABridge.saveCharacter(activeProjectId, current.profile);
+        writeLibrary(items);
+        render();
+      } catch (error) { alert("Reference import failed: " + error.message); }
     });
     $("characterReferenceInput")?.addEventListener("change", async (event) => {
       const files = Array.from(event.target.files || []);
@@ -271,6 +292,7 @@
         profile.id = freshId();
         profile.references = refs;
         const record = { profile, revision: 1, updated_at: new Date().toISOString(), reference_previews: previews };
+        if (window.STILLABridge?.isDesktop()) await window.STILLABridge.saveCharacter(activeProjectId, profile);
         writeLibrary([record, ...items]);
         selectedId = profile.id; draftPreviews = {}; render();
       } catch (error) {
@@ -280,11 +302,15 @@
       }
     });
     $("exportCharacter")?.addEventListener("click", () => { const record = selectedRecord(); if (record) downloadBundle(record); });
-    $("deleteCharacter")?.addEventListener("click", () => {
+    $("deleteCharacter")?.addEventListener("click", async () => {
       const record = selectedRecord(); if (!record) return;
-      if (!confirm('Delete "' + record.profile.name + '" from this browser library? Export a backup first if needed.')) return;
-      writeLibrary(readLibrary().filter((item) => item.profile.id !== selectedId));
-      selectedId = null; draftPreviews = {}; render();
+      const location = window.STILLABridge?.isDesktop() ? "this project" : "this browser library";
+      if (!confirm('Delete "' + record.profile.name + '" from ' + location + '? Export a backup first if needed.')) return;
+      try {
+        if (window.STILLABridge?.isDesktop()) await window.STILLABridge.deleteCharacter(activeProjectId, selectedId);
+        writeLibrary(readLibrary().filter((item) => item.profile.id !== selectedId));
+        selectedId = null; draftPreviews = {}; render();
+      } catch (error) { alert("Could not delete character: " + error.message); }
     });
     $("copyCharacterPrompt")?.addEventListener("click", async () => {
       const record = selectedRecord(); if (!record) return;
@@ -297,5 +323,19 @@
       catch { alert(brief); }
     });
   };
-  window.STILLACharacterUI = { render, wire };
+  const loadProject = async (projectId) => {
+    activeProjectId = projectId || null;
+    selectedId = null;
+    draftPreviews = {};
+    if (window.STILLABridge?.isDesktop()) {
+      if (!activeProjectId) { writeLibrary([]); return; }
+      const profiles = await window.STILLABridge.listCharacters(activeProjectId);
+      const existing = readLibrary();
+      writeLibrary(profiles.map((profile) => {
+        const cached = existing.find((item) => item.profile.id === profile.id);
+        return { profile, revision: cached?.revision || 1, updated_at: cached?.updated_at || new Date().toISOString(), reference_previews: {} };
+      }));
+    }
+  };
+  window.STILLACharacterUI = { render, wire, loadProject };
 })();
