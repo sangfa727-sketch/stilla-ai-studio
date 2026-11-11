@@ -161,6 +161,7 @@ if($("testConnection"))$("testConnection").onclick=()=>{$("connectionStatus").te
 }
 function setTheme(theme){document.documentElement.dataset.theme=theme;const sel=document.getElementById("themeSelect");if(sel)sel.value=theme}
 document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>render(b.dataset.page)));
+window.addEventListener("pywebviewready",()=>{if(currentPage==="projects")refreshProjects();else if(currentPage==="characters")render("characters");});
 document.getElementById("themeToggle").addEventListener("click",()=>setTheme(document.documentElement.dataset.theme==="light"?"dark":"light"));
 document.getElementById("queueToggle").addEventListener("click",()=>{const panel=document.getElementById("queuePanel");panel.classList.toggle("hidden");document.getElementById("queueToggle").setAttribute("aria-expanded",String(!panel.classList.contains("hidden")))});
 document.getElementById("queueClose").addEventListener("click",()=>document.getElementById("queuePanel").classList.add("hidden"));
