@@ -83,7 +83,49 @@
       "Medium shot · 10 sec":"အလယ်အလတ်မြင်ကွင်း · ၁၀ စက္ကန့်",
       "Warm, natural light":"နွေးထွေးသော သဘာဝအလင်း","Cinematic, high contrast":"ရုပ်ရှင်ဆန်ပြီး အလင်းအမှောင်ကွာခြားမှုမြင့်",
       "Documentary realism":"မှတ်တမ်းရုပ်ရှင်ဆန်သော လက်တွေ့ပုံစံ","Soft illustration":"နူးညံ့သော သရုပ်ဖော်ပုံ",
-      "16:9 — landscape":"16:9 — အလျားလိုက်","9:16 — vertical":"9:16 — ဒေါင်လိုက်","1:1 — square":"1:1 — စတုရန်း"
+      "16:9 — landscape":"16:9 — အလျားလိုက်","9:16 — vertical":"9:16 — ဒေါင်လိုက်","1:1 — square":"1:1 — စတုရန်း",
+      "A unique name used in stories and the library.":"ဇာတ်လမ်းများနှင့် စာကြည့်တိုက်တွင် အသုံးပြုမည့် သီးသန့်အမည်။",
+      "Examples: en, my, th, ja":"ဥပမာ - en, my",
+      "Optional unsigned 32-bit seed; only applied when supported.":"ရွေးချယ်နိုင်သော 32-bit Seed ဖြစ်သည်။ ပံ့ပိုးသောအခါမှသာ အသုံးပြုမည်။",
+      "Overall outline and recognizable shape.":"အလုံးစုံအပြင်ပုံနှင့် ခွဲခြားသိနိုင်သော ပုံသဏ္ဌာန်။",
+      "Head/body ratio, limb length, build.":"ဦးခေါင်းနှင့် ကိုယ်ခန္ဓာအချိုး၊ ခြေလက်အရှည်နှင့် ကိုယ်ထည်ဖွဲ့စည်းပုံ။",
+      "Shape, size, spacing, color.":"ပုံစံ၊ အရွယ်အစား၊ အကွာအဝေးနှင့် အရောင်။",
+      "Comma-separated color names.":"ကော်မာဖြင့် ခွဲရေးထားသော အရောင်အမည်များ။",
+      "Comma-separated; keep stable.":"ကော်မာဖြင့် ခွဲရေးပါ။ ပုံစံတည်ငြိမ်စွာ ထိန်းထားပါ။",
+      "Scars, spots, patterns, etc.":"အမာရွတ်၊ အစက်အပြောက်၊ ပုံစံများ စသည်။",
+      "Default canonical costume.":"မူရင်းအမြဲတမ်းဝတ်စုံ။",
+      "Features that must never change.":"မည်သည့်အခါမျှ မပြောင်းလဲရမည့် လက္ခဏာများ။",
+      "Comma-separated traits.":"ကော်မာဖြင့် ခွဲရေးထားသော စရိုက်လက္ခဏာများ။",
+      "A lovable weakness that drives original situations.":"စိတ်ဝင်စားဖွယ် မူရင်းအခြေအနေများ ဖြစ်ပေါ်စေသော ချစ်စရာအားနည်းချက်။",
+      "e.g. overconfidence, visual timing, harmless misunderstandings.":"ဥပမာ - ကိုယ့်ကိုယ်ကို ယုံကြည်လွန်ခြင်း၊ အချိန်ကိုက်ဟာသ၊ အန္တရာယ်မရှိသော နားလည်မှုလွဲခြင်း။",
+      "Voice design only; no voice model is generated here.":"အသံပုံစံဖော်ပြချက်သာ ဖြစ်သည်။ ဤနေရာတွင် Voice Model မဖန်တီးပါ။",
+      "Import approved images to help preserve identity. Use front, side, back and expression views where available.":"ဇာတ်ကောင်ပုံစံတူညီမှု ထိန်းသိမ်းရန် အတည်ပြုထားသော ကိုးကားပုံများ ထည့်ပါ။ ရှေ့၊ ဘေး၊ နောက်နှင့် မျက်နှာအမူအရာပုံများ အသုံးပြုနိုင်သည်။",
+      "Turnaround / expression sheet generation will be enabled after a verified local image workflow adapter is connected.":"Local Image Workflow Adapter ကို စမ်းသပ်အတည်ပြုပြီး ချိတ်ဆက်ပြီးမှ Turnaround / Expression Sheet ဖန်တီးမှုကို ဖွင့်ပါမည်။",
+      "Build original characters once, preserve their visual DNA and reuse them in future stories.":"မူရင်းဇာတ်ကောင်ကို တစ်ကြိမ်ဖန်တီးပြီး ရုပ်သွင် DNA ကို ထိန်းသိမ်းကာ နောက်ဇာတ်လမ်းများတွင် ပြန်သုံးပါ။",
+      "Profiles and small reference previews are saved in this browser only. Export a bundle to back up or move a character. This is not yet connected to project-folder storage or ComfyUI reference conditioning.":"Profile နှင့် ကိုးကားပုံ Preview များကို ဤ Browser ထဲတွင်သာ သိမ်းထားသည်။ Backup ပြုလုပ်ရန် သို့မဟုတ် အခြားနေရာသို့ ရွှေ့ရန် Bundle ထုတ်ယူပါ။ Project Folder Storage သို့မဟုတ် ComfyUI Reference Conditioning နှင့် မချိတ်ဆက်ရသေးပါ။",
+      "Each save creates a revision. Deletion requires confirmation.":"သိမ်းဆည်းမှုတိုင်းသည် Revision အသစ်ဖန်တီးသည်။ ဖျက်ရန် အတည်ပြုချက်လိုအပ်သည်။",
+      "The selected profile can be exported as a validated M7a-compatible JSON bundle. Storyboard binding is a later integration step.":"ရွေးချယ်ထားသော Profile ကို M7a နှင့် ကိုက်ညီသည့် JSON Bundle အဖြစ် ထုတ်ယူနိုင်သည်။ Storyboard ချိတ်ဆက်မှုကို နောက်အဆင့်တွင် ဆောင်ရွက်မည်။",
+      "Character reference sheet":"ဇာတ်ကောင်ကိုးကား Sheet",
+      "Please enter a character name.":"ဇာတ်ကောင်အမည် ထည့်သွင်းပါ။",
+      "A character can have up to 20 reference images.":"ဇာတ်ကောင်တစ်ခုလျှင် ကိုးကားပုံ အများဆုံး ၂၀ ပုံ ထည့်နိုင်သည်။",
+      "Save the character first, then add reference images.":"ကိုးကားပုံမထည့်မီ ဇာတ်ကောင်ကို အရင်သိမ်းဆည်းပါ။",
+      "Only PNG, JPEG and WebP reference images are supported.":"PNG၊ JPEG နှင့် WebP ကိုးကားပုံများကိုသာ ပံ့ပိုးသည်။",
+      "Delete this character from this browser library? Export a backup first if needed.":"ဤ Browser စာကြည့်တိုက်မှ ဇာတ်ကောင်ကို ဖျက်မည်လား။ လိုအပ်ပါက Backup ကို အရင်ထုတ်ယူပါ။",
+      "Identity brief copied.":"ဇာတ်ကောင်အချက်အလက်ကို ကူးယူပြီးပါပြီ။",
+      "Could not import character bundle: ":"Character Bundle ထည့်သွင်း၍ မရပါ: ",
+      "Could not save character: ":"ဇာတ်ကောင်သိမ်း၍ မရပါ: ",
+      "Changes are drafts until saved.":"မသိမ်းမချင်း ပြောင်းလဲမှုများသည် Draft အဖြစ်သာ ရှိနေပါမည်။",
+      "This prototype does not make network requests. Connection testing will be implemented in the desktop application.":"ဤနမူနာသည် Network Request မပြုလုပ်ပါ။ Desktop Application တွင် ချိတ်ဆက်မှုစမ်းသပ်ခြင်းကို ထည့်သွင်းမည်။",
+      "Theme is interactive. Other preferences are sample form values and are not persisted.":"Theme ကို ပြောင်းလဲနိုင်သည်။ အခြားစိတ်ကြိုက်တန်ဖိုးများသည် နမူနာသာဖြစ်ပြီး အမြဲတမ်းမသိမ်းဆည်းပါ။",
+      "Never move or delete existing model files automatically. Local/remote selection and data disclosure must be explicit.":"ရှိပြီးသား Model ဖိုင်များကို အလိုအလျောက် မရွှေ့ပါနှင့်၊ မဖျက်ပါနှင့်။ Local/Remote ရွေးချယ်မှုနှင့် ဒေတာပေးပို့မှုကို အသုံးပြုသူက အတိအလင်း အတည်ပြုရမည်။",
+      "This prototype does not make network requests.":"ဤနမူနာသည် Network Request မပြုလုပ်ပါ။",
+      "Not connected":"မချိတ်ဆက်ထားပါ",
+      "Choose a local folder…":"စက်တွင်း Folder ရွေးပါ…",
+      "No destination is selected in this browser prototype.":"ဤ Browser နမူနာတွင် သိမ်းဆည်းမည့်နေရာ မရွေးချယ်ရသေးပါ။",
+      "No actual media, output path or rendering engine is connected.":"တကယ့်မီဒီယာ၊ Output Path သို့မဟုတ် Rendering Engine မချိတ်ဆက်ရသေးပါ။",
+      "Project does not exist":"ပရောဂျက် မရှိပါ။",
+      "Search characters":"ဇာတ်ကောင်ရှာရန်"
+
     }
   };
   const reverse = {};
@@ -157,5 +199,5 @@
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
     apply();
   };
-  window.STILLAI18N = { init, setLanguage, getLanguage: () => language, translate };
+  window.STILLAI18N = { init, setLanguage, refresh: apply, getLanguage: () => language, translate };
 })();
