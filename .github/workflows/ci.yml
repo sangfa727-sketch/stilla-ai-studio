@@ -25,3 +25,5 @@ jobs:
         run: python -m pytest
       - name: Check formatting and lint
         run: ruff check .
+      - name: Check Character Creator prototype JavaScript syntax
+        run: node --check apps/desktop-prototype/characters.js
