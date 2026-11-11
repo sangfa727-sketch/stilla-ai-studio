@@ -101,7 +101,7 @@ class CharacterBoundShotPlan:
     schema_version: int = 1
 
     def __post_init__(self) -> None:
-        if self.schema_version != 1 or isinstance(self.schema_version, bool):
+        if isinstance(self.schema_version, bool) or not isinstance(self.schema_version, int) or self.schema_version != 1:
             raise StoryboardBindingError("unsupported storyboard binding schema version")
         if not isinstance(self.shot_plan, ShotPlan):
             raise StoryboardBindingError("shot_plan must be a validated ShotPlan")
@@ -203,7 +203,12 @@ def bind_character_to_shots(
     snapshot = CharacterRevisionSnapshot(revision=revision, profile=character)
     available = {shot.id for shot in document.shot_plan.shots}
     selected = tuple(shot.id for shot in document.shot_plan.shots) if shot_ids is None else tuple(shot_ids)
-    if not selected or len(selected) != len(set(selected)) or any(item not in available for item in selected):
+    if (
+        not selected
+        or any(not isinstance(item, str) for item in selected)
+        or len(selected) != len(set(selected))
+        or any(item not in available for item in selected)
+    ):
         raise StoryboardBindingError("selected shot IDs must be unique existing shots")
     revisions = {
         (item.profile.id, item.revision): item for item in document.character_revisions
