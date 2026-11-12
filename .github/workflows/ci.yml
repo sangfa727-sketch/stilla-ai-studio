@@ -29,6 +29,7 @@ jobs:
         run: |
           node --check apps/desktop-prototype/i18n.js
           node --check apps/desktop-prototype/characters.js
+          node --check apps/desktop-prototype/storyboard.js
           node --check apps/desktop-prototype/desktop-bridge.js
           python - <<'PY'
           import re
@@ -40,3 +41,4 @@ jobs:
           Path("/tmp/stilla-inline.js").write_text(scripts[0], encoding="utf-8")
           PY
           node --check /tmp/stilla-inline.js
+          node --test tests/js/*.test.js

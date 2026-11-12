@@ -24,7 +24,15 @@
       "Edit a video":"ဗီဒီယိုတည်းဖြတ်ရန်","Timeline, audio and captions":"Timeline၊ အသံနှင့် စာတန်းများ",
       "Prepare an export":"ဖိုင်ထုတ်ရန် ပြင်ဆင်ပါ","Output format and validation":"Output ပုံစံနှင့် စစ်ဆေးမှု",
       "Prototype only. Project counts, save states and recent items are not backed by persistent storage.":"နမူနာ UI သာဖြစ်သည်။ ပရောဂျက်အရေအတွက်၊ သိမ်းဆည်းမှုအခြေအနေနှင့် လတ်တလောစာရင်းများကို အမြဲတမ်း Storage တွင် မသိမ်းထားပါ။",
-      "Scenes":"Scene များ","Reset sample":"နမူနာပြန်ထားရန်","Save draft":"Draft သိမ်းရန်",
+      "Scenes":"Scene များ",
+      "M7F / VERSIONED CHARACTER BINDING":"M7F / ဗားရှင်းလိုက် ဇာတ်ကောင်ချိတ်ဆက်မှု",
+      "Unsaved changes are local to this view":"မသိမ်းရသေးသော ပြောင်းလဲမှုများသည် ဤမြင်ကွင်းအတွင်းသာ ရှိနေပါသည်။",
+      "Describe the action in this shot.":"ဤရိုက်ကွက်အတွင်း လုပ်ဆောင်ချက်ကို ဖော်ပြပါ။",
+      "Storyboard unavailable":"Storyboard ကို ဖွင့်၍မရပါ။",
+      "Saved storyboard data is invalid JSON. Existing data was preserved; no replacement was made.":"သိမ်းထားသော Storyboard ဒေတာ၏ JSON ပုံစံ မမှန်ပါ။ မူလဒေတာကို မပြောင်းလဲဘဲ ထိန်းသိမ်းထားပါသည်။",
+      "Saved storyboard data has an invalid structure. Existing data was preserved; no replacement was made.":"သိမ်းထားသော Storyboard ဒေတာဖွဲ့စည်းပုံ မမှန်ပါ။ မူလဒေတာကို မပြောင်းလဲဘဲ ထိန်းသိမ်းထားပါသည်။",
+      "Saved storyboard data failed validation. Existing data was preserved; no replacement was made.":"သိမ်းထားသော Storyboard ဒေတာ စစ်ဆေးမှု မအောင်မြင်ပါ။ မူလဒေတာကို မပြောင်းလဲဘဲ ထိန်းသိမ်းထားပါသည်။",
+      "Character binding":"ဇာတ်ကောင်ချိတ်ဆက်မှု","Select or create a project before editing its storyboard.":"Storyboard မပြင်ဆင်မီ ပရောဂျက်တစ်ခုကို ရွေးချယ်ပါ သို့မဟုတ် အသစ်ဖန်တီးပါ။","Storyboard data could not be loaded.":"Storyboard ဒေတာကို ဖွင့်၍မရပါ။","Loading storyboard and project characters…":"Storyboard နှင့် ပရောဂျက်ဇာတ်ကောင်များကို ဖွင့်နေသည်…","Scene description":"မြင်ကွင်းဖော်ပြချက်","Duration (seconds)":"ကြာချိန် (စက္ကန့်)","Camera":"ကင်မရာ","Pin character revision":"ဇာတ်ကောင် Revision ကို ချိတ်ပါ","Choose a saved character…":"သိမ်းထားသော ဇာတ်ကောင်ကို ရွေးပါ…","Bind to shot":"Shot နှင့် ချိတ်ပါ","Unbind":"ချိတ်ဆက်မှုဖြုတ်ရန်","Remove":"ဖယ်ရှားရန်","Storyboard character consistency":"Storyboard ဇာတ်ကောင်ပုံစံ တစ်သမတ်တည်းဖြစ်မှု","Pin an exact character profile revision to each shot. Historical snapshots remain embedded in the saved storyboard.":"Shot တစ်ခုချင်းစီတွင် သတ်မှတ်ထားသော Character Profile Revision ကို ချိတ်ဆက်ပါ။ ယခင် Snapshot များကို သိမ်းဆည်းထားသော Storyboard ထဲတွင် ထိန်းသိမ်းထားပါမည်။","＋ Add shot":"＋ Shot ထည့်ရန်","Save storyboard":"Storyboard သိမ်းရန်","Saved to this project":"ဤပရောဂျက်တွင် သိမ်းပြီးပါပြီ","Storyboard saved":"Storyboard သိမ်းပြီးပါပြီ","No saved characters in this project. Create a character in Character Creator first.":"ဤပရောဂျက်တွင် သိမ်းထားသော ဇာတ်ကောင်မရှိပါ။ Character Creator တွင် အရင်ဖန်တီးပါ။","No character is pinned to this shot.":"ဤ Shot တွင် ဇာတ်ကောင်မချိတ်ဆက်ရသေးပါ။","No shots yet. Add a shot to start binding characters.":"Shot မရှိသေးပါ။ ဇာတ်ကောင်ချိတ်ဆက်ရန် Shot တစ်ခုထည့်ပါ။","Revision numbers are based on the local character library and embedded snapshots. A durable revision ledger remains future work.":"Revision နံပါတ်များသည် Local Character Library နှင့် Snapshot များအပေါ် အခြေခံထားသည်။ အမြဲတမ်း Revision Ledger ကို နောက်အဆင့်တွင် ဆောင်ရွက်ပါမည်။","Every shot needs a scene description.":"Shot တိုင်းတွင် မြင်ကွင်းဖော်ပြချက် လိုအပ်သည်။","Choose a saved character before binding.":"မချိတ်ဆက်မီ သိမ်းထားသော ဇာတ်ကောင်ကို ရွေးပါ။","Selected character is not available in this project.":"ရွေးချယ်ထားသော ဇာတ်ကောင်ကို ဤပရောဂျက်တွင် မတွေ့ပါ။","Shot duration must be between 0 and 86400 seconds.":"Shot ကြာချိန်သည် ၀ မှ ၈၆၄၀၀ စက္ကန့်အတွင်း ဖြစ်ရပါမည်။","Binding updated · save storyboard to persist":"ချိတ်ဆက်မှု ပြင်ဆင်ပြီးပါပြီ · သိမ်းရန် Storyboard ကို Save လုပ်ပါ။","Binding removed · save storyboard to persist":"ချိတ်ဆက်မှု ဖြုတ်ပြီးပါပြီ · သိမ်းရန် Storyboard ကို Save လုပ်ပါ။","Reset sample":"နမူနာပြန်ထားရန်","Save draft":"Draft သိမ်းရန်",
       "Script draft":"ဇာတ်ညွှန်း Draft","Narration / scene description":"နောက်ခံပြောစကား / Scene ဖော်ပြချက်",
       "Target duration":"ရည်ရွယ်ထားသော ကြာချိန်","Visual mood":"မြင်ကွင်းအငွေ့အသက်","Aspect ratio":"ပုံအချိုး",
       "AI revisions must create a new version or explicit draft; never silently replace approved content.":"AI ပြင်ဆင်ချက်များကို Version အသစ် သို့မဟုတ် Draft အသစ်အဖြစ်သာ သိမ်းရမည်။ အတည်ပြုပြီးသားအကြောင်းအရာကို တိတ်တဆိတ် အစားမထိုးရပါ။",
@@ -229,14 +237,36 @@
     const key = language === "my" ? trimmed : (reverse[trimmed] || trimmed);
     let result = language === "my" ? (dictionaries.my[key] || trimmed) : key;
     if (language === "my") {
-      const revision = trimmed.match(/^Revision (\\d+) · (\\d+) reference\\(s\\)$/);
+      const revision = trimmed.match(/^Revision (\d+) · (\d+) reference\(s\)$/);
       if (revision) result = "Revision " + revision[1] + " · ကိုးကားပုံ " + revision[2] + " ပုံ";
+      const shot = trimmed.match(/^SHOT (\d+)$/);
+      if (shot) result = "ရိုက်ကွက် " + shot[1];
+      const shots = trimmed.match(/^(\d+) shot\(s\)$/);
+      if (shots) result = shots[1] + " ရိုက်ကွက်";
+      const bindings = trimmed.match(/^(\d+) binding\(s\)$/);
+      if (bindings) result = bindings[1] + " ချိတ်ဆက်မှု";
+      const pinned = trimmed.match(/^Revision (\d+) · SHA ([a-f0-9]{12})…$/i);
+      if (pinned) result = "ဗားရှင်း " + pinned[1] + " · SHA " + pinned[2] + "…";
+      if (trimmed.startsWith("Could not bind character: ")) {
+        result = "ဇာတ်ကောင်ချိတ်ဆက်၍ မရပါ: " + trimmed.slice("Could not bind character: ".length);
+      }
       if (trimmed.startsWith("Could not import character bundle: ")) {
         result = "Character Bundle ထည့်သွင်း၍ မရပါ: " + trimmed.slice(35);
       }
     } else {
-      const revision = trimmed.match(/^Revision (\\d+) · ကိုးကားပုံ (\\d+) ပုံ$/);
+      const revision = trimmed.match(/^Revision (\d+) · ကိုးကားပုံ (\d+) ပုံ$/);
       if (revision) result = "Revision " + revision[1] + " · " + revision[2] + " reference(s)";
+      const shot = trimmed.match(/^ရိုက်ကွက် (\d+)$/);
+      if (shot) result = "SHOT " + shot[1];
+      const shots = trimmed.match(/^(\d+) ရိုက်ကွက်$/);
+      if (shots) result = shots[1] + " shot(s)";
+      const bindings = trimmed.match(/^(\d+) ချိတ်ဆက်မှု$/);
+      if (bindings) result = bindings[1] + " binding(s)";
+      const pinned = trimmed.match(/^ဗားရှင်း (\d+) · SHA ([a-f0-9]{12})…$/i);
+      if (pinned) result = "Revision " + pinned[1] + " · SHA " + pinned[2] + "…";
+      if (trimmed.startsWith("ဇာတ်ကောင်ချိတ်ဆက်၍ မရပါ: ")) {
+        result = "Could not bind character: " + trimmed.slice("ဇာတ်ကောင်ချိတ်ဆက်၍ မရပါ: ".length);
+      }
       if (trimmed.startsWith("Character Bundle ထည့်သွင်း၍ မရပါ: ")) {
         result = "Could not import character bundle: " + trimmed.slice(35);
       }
