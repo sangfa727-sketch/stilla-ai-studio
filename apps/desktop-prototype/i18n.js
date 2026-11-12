@@ -248,7 +248,7 @@
       const pinned = trimmed.match(/^Revision (\d+) · SHA ([a-f0-9]{12})…$/i);
       if (pinned) result = "ဗားရှင်း " + pinned[1] + " · SHA " + pinned[2] + "…";
       if (trimmed.startsWith("Could not bind character: ")) {
-        result = "ဇာတ်ကောင်ချိတ်ဆက်၍ မရပါ: " + trimmed.slice(25);
+        result = "ဇာတ်ကောင်ချိတ်ဆက်၍ မရပါ: " + trimmed.slice("Could not bind character: ".length);
       }
       if (trimmed.startsWith("Could not import character bundle: ")) {
         result = "Character Bundle ထည့်သွင်း၍ မရပါ: " + trimmed.slice(35);
