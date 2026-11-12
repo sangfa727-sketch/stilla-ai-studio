@@ -41,4 +41,4 @@ jobs:
           Path("/tmp/stilla-inline.js").write_text(scripts[0], encoding="utf-8")
           PY
           node --check /tmp/stilla-inline.js
-          node --test tests/js/storyboard.test.js
+          node --test tests/js/*.test.js
