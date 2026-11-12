@@ -237,15 +237,15 @@
     const key = language === "my" ? trimmed : (reverse[trimmed] || trimmed);
     let result = language === "my" ? (dictionaries.my[key] || trimmed) : key;
     if (language === "my") {
-      const revision = trimmed.match(/^Revision (\\d+) · (\\d+) reference\\(s\\)$/);
+      const revision = trimmed.match(/^Revision (\d+) · (\d+) reference\(s\)$/);
       if (revision) result = "Revision " + revision[1] + " · ကိုးကားပုံ " + revision[2] + " ပုံ";
-      const shot = trimmed.match(/^SHOT (\\d+)$/);
+      const shot = trimmed.match(/^SHOT (\d+)$/);
       if (shot) result = "ရိုက်ကွက် " + shot[1];
-      const shots = trimmed.match(/^(\\d+) shot\\(s\\)$/);
+      const shots = trimmed.match(/^(\d+) shot\(s\)$/);
       if (shots) result = shots[1] + " ရိုက်ကွက်";
-      const bindings = trimmed.match(/^(\\d+) binding\\(s\\)$/);
+      const bindings = trimmed.match(/^(\d+) binding\(s\)$/);
       if (bindings) result = bindings[1] + " ချိတ်ဆက်မှု";
-      const pinned = trimmed.match(/^Revision (\\d+) · SHA ([a-f0-9]{12})…$/i);
+      const pinned = trimmed.match(/^Revision (\d+) · SHA ([a-f0-9]{12})…$/i);
       if (pinned) result = "ဗားရှင်း " + pinned[1] + " · SHA " + pinned[2] + "…";
       if (trimmed.startsWith("Could not bind character: ")) {
         result = "ဇာတ်ကောင်ချိတ်ဆက်၍ မရပါ: " + trimmed.slice(25);
@@ -254,18 +254,18 @@
         result = "Character Bundle ထည့်သွင်း၍ မရပါ: " + trimmed.slice(35);
       }
     } else {
-      const revision = trimmed.match(/^Revision (\\d+) · ကိုးကားပုံ (\\d+) ပုံ$/);
+      const revision = trimmed.match(/^Revision (\d+) · ကိုးကားပုံ (\d+) ပုံ$/);
       if (revision) result = "Revision " + revision[1] + " · " + revision[2] + " reference(s)";
-      const shot = trimmed.match(/^ရိုက်ကွက် (\\d+)$/);
+      const shot = trimmed.match(/^ရိုက်ကွက် (\d+)$/);
       if (shot) result = "SHOT " + shot[1];
-      const shots = trimmed.match(/^(\\d+) ရိုက်ကွက်$/);
+      const shots = trimmed.match(/^(\d+) ရိုက်ကွက်$/);
       if (shots) result = shots[1] + " shot(s)";
-      const bindings = trimmed.match(/^(\\d+) ချိတ်ဆက်မှု$/);
+      const bindings = trimmed.match(/^(\d+) ချိတ်ဆက်မှု$/);
       if (bindings) result = bindings[1] + " binding(s)";
-      const pinned = trimmed.match(/^ဗားရှင်း (\\d+) · SHA ([a-f0-9]{12})…$/i);
+      const pinned = trimmed.match(/^ဗားရှင်း (\d+) · SHA ([a-f0-9]{12})…$/i);
       if (pinned) result = "Revision " + pinned[1] + " · SHA " + pinned[2] + "…";
       if (trimmed.startsWith("ဇာတ်ကောင်ချိတ်ဆက်၍ မရပါ: ")) {
-        result = "Could not bind character: " + trimmed.slice(25);
+        result = "Could not bind character: " + trimmed.slice("ဇာတ်ကောင်ချိတ်ဆက်၍ မရပါ: ".length);
       }
       if (trimmed.startsWith("Character Bundle ထည့်သွင်း၍ မရပါ: ")) {
         result = "Could not import character bundle: " + trimmed.slice(35);
