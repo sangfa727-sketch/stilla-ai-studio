@@ -131,60 +131,63 @@ class ProjectWorkspace:
         locked = False
         deadline = time.monotonic() + float(timeout)
         try:
-            flags = os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
-            descriptor = os.open(lock_path, flags, 0o600)
-            if not stat.S_ISREG(os.fstat(descriptor).st_mode):
-                raise WorkspaceError("project lock path is not a regular file")
-            if os.name == "nt":
-                import msvcrt
+            try:
+                flags = os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
+                descriptor = os.open(lock_path, flags, 0o600)
+                if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+                    raise WorkspaceError("project lock path is not a regular file")
+                if os.name == "nt":
+                    import msvcrt
 
-                if os.fstat(descriptor).st_size == 0:
-                    os.write(descriptor, b"\\0")
-                    os.fsync(descriptor)
-                while True:
-                    os.lseek(descriptor, 0, os.SEEK_SET)
-                    try:
-                        msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
-                        locked = True
-                        break
-                    except OSError:
-                        if time.monotonic() >= deadline:
-                            raise WorkspaceError("timed out waiting for project lock") from None
-                        time.sleep(0.025)
-            else:
-                import fcntl
+                    if os.fstat(descriptor).st_size == 0:
+                        os.write(descriptor, b"\\0")
+                        os.fsync(descriptor)
+                    while True:
+                        os.lseek(descriptor, 0, os.SEEK_SET)
+                        try:
+                            msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
+                            locked = True
+                            break
+                        except OSError:
+                            if time.monotonic() >= deadline:
+                                raise WorkspaceError("timed out waiting for project lock") from None
+                            time.sleep(0.025)
+                else:
+                    import fcntl
 
-                while True:
-                    try:
-                        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                        locked = True
-                        break
-                    except BlockingIOError:
-                        if time.monotonic() >= deadline:
-                            raise WorkspaceError("timed out waiting for project lock") from None
-                        time.sleep(0.025)
+                    while True:
+                        try:
+                            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                            locked = True
+                            break
+                        except BlockingIOError:
+                            if time.monotonic() >= deadline:
+                                raise WorkspaceError("timed out waiting for project lock") from None
+                            time.sleep(0.025)
+            except WorkspaceError:
+                raise
+            except OSError:
+                raise WorkspaceError("could not acquire project lock") from None
             yield
-        except WorkspaceError:
-            raise
-        except OSError:
-            raise WorkspaceError("could not acquire project lock") from None
         finally:
-            if descriptor is not None:
-                if locked:
-                    try:
-                        if os.name == "nt":
-                            import msvcrt
+            try:
+                if descriptor is not None:
+                    if locked:
+                        try:
+                            if os.name == "nt":
+                                import msvcrt
 
-                            os.lseek(descriptor, 0, os.SEEK_SET)
-                            msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
-                        else:
-                            import fcntl
+                                os.lseek(descriptor, 0, os.SEEK_SET)
+                                msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+                            else:
+                                import fcntl
 
-                            fcntl.flock(descriptor, fcntl.LOCK_UN)
-                    except OSError:
-                        pass
-                os.close(descriptor)
-            thread_lock.release()
+                                fcntl.flock(descriptor, fcntl.LOCK_UN)
+                        except OSError:
+                            pass
+                    os.close(descriptor)
+            finally:
+                thread_lock.release()
 
     def _projects_dir(self) -> Path:
         path = self.root / "projects"
