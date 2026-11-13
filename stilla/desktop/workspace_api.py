@@ -69,6 +69,7 @@ class DesktopWorkspaceAPI:
 
     def choose_workspace_directory(self) -> dict[str, Any]:
         """Open a native directory picker; JS cannot supply an arbitrary filesystem path."""
+        self._safe_directory(project / "characters", project)
         if self._window is None:
             raise DesktopAPIError("Desktop window is not ready")
         import webview
@@ -110,7 +111,10 @@ class DesktopWorkspaceAPI:
         return {"saved": True, "project_id": project_id, "document": name}
 
     def load_document(self, project_id: str, name: str) -> Any:
-        return self.load_document_versioned(project_id, name)["value"]
+        value = self.load_document_versioned(project_id, name)["value"]
+        if value is None and name != "storyboard":
+            raise DesktopAPIError("Could not load project document")
+        return value
 
     def load_document_versioned(self, project_id: str, name: str) -> dict[str, Any]:
         self._require_project(project_id)
@@ -314,6 +318,9 @@ class DesktopWorkspaceAPI:
         self._safe_directory(target.parent, project)
         digest = hashlib.sha256(raw).hexdigest()
         with self._lock, self._workspace.project_lock(project_id):
+            record = self._load_character_record_locked(project / "characters", character_id)
+            if record is None:
+                raise DesktopAPIError("Character profile does not exist")
             self._atomic_create(target, raw)
         return {
             "cancelled": False,
@@ -453,7 +460,7 @@ class DesktopWorkspaceAPI:
 
     @staticmethod
     def _validate_document(name: str, value: Any) -> None:
-        if name not in {"brief", "script", "storyboard", "settings"}:
+        if not isinstance(name, str) or name not in {"brief", "script", "storyboard", "settings"}:
             raise DesktopAPIError("Unsupported project document")
         if name == "storyboard":
             try:
