@@ -23,7 +23,7 @@
 - The ledger and current-profile mirror are separate files. Ledger-first ordering plus recovery prevents silent history loss, but this is not a general multi-file transaction journal.
 - Native reference import and profile revision save are still separate user actions. A stale-save conflict after importing an image can leave an orphaned image; safe asset garbage collection / transactional reference attachment remains follow-up work.
 - Revision conflict feedback currently tells the user to reload; there is no automatic three-way merge.
-- Windows msvcrt locking is implemented but still requires execution on the user's Windows laptop. CI on Linux does not prove native Windows runtime behavior.
+- A dedicated Windows GitHub Actions job exercises msvcrt locking and project persistence. The user's own Windows laptop still requires acceptance because hosted CI does not verify the installed PyWebView runtime, native dialogs, filesystem policy, or local GPU environment.
 - No ComfyUI reference conditioning, image preview pipeline, Windows installer, or native phone app is included.
 
 ## Acceptance gates
