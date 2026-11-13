@@ -178,8 +178,8 @@ class DesktopWorkspaceAPI:
             raise DesktopAPIError("Expected character revision is invalid")
         directory = project / "characters"
         self._safe_directory(directory, project)
-        with self._lock, self._workspace.project_lock(project_id):
-            try:
+        try:
+            with self._lock, self._workspace.project_lock(project_id):
                 record = self._load_character_record_locked(directory, profile.id)
                 ledger = load_character_revision_ledger(directory, profile.id)
                 if ledger is not None and ledger["deleted_at"] is not None:
@@ -200,10 +200,10 @@ class DesktopWorkspaceAPI:
                 except (OSError, CharacterStorageError):
                     # The immutable ledger is authoritative; the legacy profile file is a mirror.
                     mirror_recovery_pending = True
-            except DesktopAPIError:
-                raise
-            except (CharacterRevisionError, CharacterStorageError, WorkspaceError, OSError):
-                raise DesktopAPIError("Could not safely save character revision") from None
+        except DesktopAPIError:
+            raise
+        except (CharacterRevisionError, CharacterStorageError, WorkspaceError, OSError):
+            raise DesktopAPIError("Could not safely save character revision") from None
         return {
             "saved": True,
             "character_id": profile.id,
@@ -250,8 +250,8 @@ class DesktopWorkspaceAPI:
         directory = project / "characters"
         self._safe_directory(directory, project)
         target = directory / f"{character_id}.character.json"
-        with self._lock, self._workspace.project_lock(project_id):
-            try:
+        try:
+            with self._lock, self._workspace.project_lock(project_id):
                 record = self._load_character_record_locked(directory, character_id)
                 if record is None:
                     raise DesktopAPIError("Character profile does not exist")
@@ -265,12 +265,12 @@ class DesktopWorkspaceAPI:
                     target.unlink(missing_ok=True)
                 except OSError:
                     pass
-            except DesktopAPIError:
-                raise
-            except CharacterStorageError:
-                raise DesktopAPIError("Character profile path is unsafe or invalid") from None
-            except (CharacterRevisionError, WorkspaceError, OSError):
-                raise DesktopAPIError("Could not safely delete character profile") from None
+        except DesktopAPIError:
+            raise
+        except CharacterStorageError:
+            raise DesktopAPIError("Character profile path is unsafe or invalid") from None
+        except (CharacterRevisionError, WorkspaceError, OSError):
+            raise DesktopAPIError("Could not safely delete character profile") from None
         return {"deleted": True, "character_id": character_id}
 
     def load_character_profile(self, project_id: str, character_id: str) -> dict[str, Any]:
@@ -279,11 +279,11 @@ class DesktopWorkspaceAPI:
         project = self._require_project(project_id)
         directory = project / "characters"
         self._safe_directory(directory, project)
-        with self._lock, self._workspace.project_lock(project_id):
-            try:
+        try:
+            with self._lock, self._workspace.project_lock(project_id):
                 record = self._load_character_record_locked(directory, character_id)
-            except (CharacterRevisionError, CharacterStorageError, WorkspaceError, OSError):
-                raise DesktopAPIError("Could not safely load character profile") from None
+        except (CharacterRevisionError, CharacterStorageError, WorkspaceError, OSError):
+            raise DesktopAPIError("Could not safely load character profile") from None
         if record is None:
             raise DesktopAPIError("Character profile does not exist")
         return record["profile"]
@@ -416,13 +416,20 @@ class DesktopWorkspaceAPI:
     def _safe_directory(path: Path, project: Path) -> None:
         project = project.resolve()
         current = project
-        for part in path.relative_to(project).parts:
+        try:
+            parts = path.relative_to(project).parts
+        except ValueError:
+            raise DesktopAPIError("Project asset path escapes the project") from None
+        for part in parts:
             current = current / part
             if current.is_symlink():
                 raise DesktopAPIError("Project asset directory contains a symbolic link")
-            current.mkdir(exist_ok=True)
-            if not current.resolve().is_relative_to(project):
-                raise DesktopAPIError("Project asset path escapes the project")
+            try:
+                current.mkdir(exist_ok=True)
+                if not current.resolve().is_relative_to(project):
+                    raise DesktopAPIError("Project asset path escapes the project")
+            except OSError:
+                raise DesktopAPIError("Project asset directory is unavailable") from None
 
     @staticmethod
     def _atomic_create(target: Path, data: bytes) -> None:
