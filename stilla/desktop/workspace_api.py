@@ -367,7 +367,10 @@ class DesktopWorkspaceAPI:
             }
         if ledger["deleted_at"] is not None:
             if profile_path.exists():
-                profile_path.unlink()
+                try:
+                    profile_path.unlink()
+                except OSError:
+                    pass
             return None
 
         latest = ledger["revisions"][-1]
