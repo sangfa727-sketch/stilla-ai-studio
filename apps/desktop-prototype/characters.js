@@ -313,8 +313,14 @@
         });
         profile.id = freshId();
         profile.references = refs;
+        const desktop = window.STILLABridge?.isDesktop();
         const record = { profile, revision: 1, updated_at: new Date().toISOString(), reference_previews: previews };
-        if (window.STILLABridge?.isDesktop()) await window.STILLABridge.saveCharacter(activeProjectId, profile);
+        if (desktop) {
+          const saved = await window.STILLABridge.saveCharacter(activeProjectId, profile, 0);
+          record.revision = saved.revision;
+          record.updated_at = saved.updated_at;
+          record.mirror_recovery_pending = saved.mirror_recovery_pending;
+        }
         writeLibrary([record, ...items]);
         selectedId = profile.id; draftPreviews = {}; render();
       } catch (error) {
