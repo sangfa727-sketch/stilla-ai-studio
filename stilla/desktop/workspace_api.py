@@ -117,7 +117,7 @@ class DesktopWorkspaceAPI:
 
     def load_document_versioned(self, project_id: str, name: str) -> dict[str, Any]:
         self._require_project(project_id)
-        if name not in {"brief", "script", "storyboard", "settings"}:
+        if not isinstance(name, str) or name not in {"brief", "script", "storyboard", "settings"}:
             raise DesktopAPIError("Unsupported project document")
         with self._lock:
             try:
