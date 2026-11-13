@@ -40,16 +40,19 @@ test("desktop bridge forwards durable revision and document CAS tokens", async (
 
   assert.equal(bridge.isDesktop(), true);
   const character = await bridge.saveCharacter("project_1", { id: "hero_1" }, 3);
+  const imported = await bridge.saveCharacter("project_1", { id: "hero_2" }, 0);
   const loaded = await bridge.loadDocumentVersioned("project_1", "storyboard");
   const saved = await bridge.saveDocumentVersioned(
     "project_1", "storyboard", { schema_version: 1 }, loaded.revision,
   );
 
   assert.equal(character.revision, 4);
+  assert.equal(imported.revision, 4);
   assert.equal(loaded.revision, "a".repeat(64));
   assert.equal(saved.revision, "b".repeat(64));
   assert.deepEqual(calls, [
     ["save_character_profile", "project_1", { id: "hero_1" }, 3],
+    ["save_character_profile", "project_1", { id: "hero_2" }, 0],
     ["load_document_versioned", "project_1", "storyboard"],
     ["save_document_versioned", "project_1", "storyboard", { schema_version: 1 }, "a".repeat(64)],
   ]);
