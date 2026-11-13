@@ -195,7 +195,7 @@ class DesktopWorkspaceAPI:
                     mirror_recovery_pending = True
             except DesktopAPIError:
                 raise
-            except (CharacterRevisionError, CharacterStorageError, OSError):
+            except (CharacterRevisionError, CharacterStorageError, WorkspaceError, OSError):
                 raise DesktopAPIError("Could not safely save character revision") from None
         return {
             "saved": True,
@@ -221,11 +221,16 @@ class DesktopWorkspaceAPI:
             if _CHARACTER_ID.fullmatch(character_id):
                 identifiers.add(character_id)
         records: list[dict[str, Any]] = []
-        with self._lock, self._workspace.project_lock(project_id):
-            for character_id in sorted(identifiers):
-                record = self._load_character_record_locked(directory, character_id)
-                if record is not None:
-                    records.append(record)
+        try:
+            with self._lock, self._workspace.project_lock(project_id):
+                for character_id in sorted(identifiers):
+                    record = self._load_character_record_locked(directory, character_id)
+                    if record is not None:
+                        records.append(record)
+        except (CharacterRevisionError, CharacterStorageError, WorkspaceError, OSError):
+            raise DesktopAPIError(
+                "Project character history failed validation; existing data was preserved."
+            ) from None
         return sorted(records, key=lambda item: item["updated_at"], reverse=True)
 
     def list_character_profiles(self, project_id: str) -> list[dict[str, Any]]:
@@ -256,7 +261,7 @@ class DesktopWorkspaceAPI:
                     cleanup_pending = True
             except DesktopAPIError:
                 raise
-            except (CharacterRevisionError, CharacterStorageError, OSError):
+            except (CharacterRevisionError, CharacterStorageError, WorkspaceError, OSError):
                 raise DesktopAPIError("Could not safely delete character profile") from None
         return {
             "deleted": True,
@@ -274,7 +279,7 @@ class DesktopWorkspaceAPI:
         with self._lock, self._workspace.project_lock(project_id):
             try:
                 record = self._load_character_record_locked(directory, character_id)
-            except (CharacterRevisionError, CharacterStorageError, OSError):
+            except (CharacterRevisionError, CharacterStorageError, WorkspaceError, OSError):
                 raise DesktopAPIError("Could not safely load character profile") from None
         if record is None:
             raise DesktopAPIError("Character profile does not exist")
@@ -317,11 +322,16 @@ class DesktopWorkspaceAPI:
         target = project / relative
         self._safe_directory(target.parent, project)
         digest = hashlib.sha256(raw).hexdigest()
-        with self._lock, self._workspace.project_lock(project_id):
-            record = self._load_character_record_locked(project / "characters", character_id)
-            if record is None:
-                raise DesktopAPIError("Character profile does not exist")
-            self._atomic_create(target, raw)
+        try:
+            with self._lock, self._workspace.project_lock(project_id):
+                record = self._load_character_record_locked(project / "characters", character_id)
+                if record is None:
+                    raise DesktopAPIError("Character profile does not exist")
+                self._atomic_create(target, raw)
+        except DesktopAPIError:
+            raise
+        except (CharacterRevisionError, CharacterStorageError, WorkspaceError, OSError):
+            raise DesktopAPIError("Could not verify the character before importing its reference") from None
         return {
             "cancelled": False,
             "asset_id": target.stem,
