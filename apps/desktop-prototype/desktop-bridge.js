@@ -28,10 +28,15 @@
     listProjects: () => call("list_projects"),
     createProject: (title, language) => call("create_project", title, language),
     listCharacters: (projectId) => call("list_character_profiles", projectId),
-    saveCharacter: (projectId, profile) => call("save_character_profile", projectId, profile),
+    listCharacterRecords: (projectId) => call("list_character_profile_records", projectId),
+    saveCharacter: (projectId, profile, expectedRevision) =>
+      call("save_character_profile", projectId, profile, expectedRevision),
     deleteCharacter: (projectId, characterId) => call("delete_character_profile", projectId, characterId),
     importCharacterReference: (projectId, characterId) => call("import_character_reference", projectId, characterId),
     saveDocument: (projectId, name, value) => call("save_document", projectId, name, value),
-    loadDocument: (projectId, name) => call("load_document", projectId, name)
+    loadDocument: (projectId, name) => call("load_document", projectId, name),
+    saveDocumentVersioned: (projectId, name, value, expectedRevision) =>
+      call("save_document_versioned", projectId, name, value, expectedRevision),
+    loadDocumentVersioned: (projectId, name) => call("load_document_versioned", projectId, name)
   });
 })();
