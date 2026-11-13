@@ -132,7 +132,7 @@ def test_character_delete_preserves_revision_history_as_tombstone(
     result = api.delete_character_profile(project_id, "hero_01")
     ledger = load_character_revision_ledger(_character_dir(api, project_id), "hero_01")
 
-    assert result["history_preserved"] is True
+    assert result["deleted"] is True
     assert ledger is not None
     assert ledger["deleted_at"]
     assert len(ledger["revisions"]) == 1
