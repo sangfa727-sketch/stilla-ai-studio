@@ -259,13 +259,12 @@ class DesktopWorkspaceAPI:
                 if ledger is None:
                     raise DesktopAPIError("Character revision history is unavailable")
                 save_character_revision_ledger(directory, mark_character_deleted(ledger))
-                cleanup_pending = False
                 if target.is_symlink():
                     raise DesktopAPIError("Character profile path is unsafe")
                 try:
                     target.unlink(missing_ok=True)
                 except OSError:
-                    cleanup_pending = True
+                    pass
             except DesktopAPIError:
                 raise
             except CharacterStorageError:
