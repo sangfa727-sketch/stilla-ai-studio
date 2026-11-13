@@ -119,6 +119,13 @@ class DesktopWorkspaceAPI:
         self._require_project(project_id)
         if not isinstance(name, str) or name not in {"brief", "script", "storyboard", "settings"}:
             raise DesktopAPIError("Unsupported project document")
+        project = self._require_project(project_id)
+        documents = project / "documents"
+        target = documents / f"{name}.json"
+        if documents.is_symlink() or target.is_symlink():
+            raise DesktopAPIError("Stored project document path is unsafe")
+        if name == "storyboard" and not documents.exists() and not target.exists():
+            return {"value": self._empty_storyboard(), "revision": None}
         with self._lock:
             try:
                 result = self._workspace.load_document_versioned(project_id, name)
@@ -261,14 +268,11 @@ class DesktopWorkspaceAPI:
                     cleanup_pending = True
             except DesktopAPIError:
                 raise
-            except (CharacterRevisionError, CharacterStorageError, WorkspaceError, OSError):
+            except CharacterStorageError:
+                raise DesktopAPIError("Character profile path is unsafe or invalid") from None
+            except (CharacterRevisionError, WorkspaceError, OSError):
                 raise DesktopAPIError("Could not safely delete character profile") from None
-        return {
-            "deleted": True,
-            "character_id": character_id,
-            "history_preserved": True,
-            "cleanup_pending": cleanup_pending,
-        }
+        return {"deleted": True, "character_id": character_id}
 
     def load_character_profile(self, project_id: str, character_id: str) -> dict[str, Any]:
         if not isinstance(character_id, str) or not _CHARACTER_ID.fullmatch(character_id):
