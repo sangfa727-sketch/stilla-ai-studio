@@ -166,6 +166,7 @@ def test_reference_import_uses_native_picker_and_stores_hash(
     )
     api._attach_window(FakeWindow())
     project_id = _project(api)
+    api.save_character_profile(project_id, _profile(), expected_revision=0)
     result = api.import_character_reference(project_id, "hero_01")
 
     assert result["mime_type"] == "image/png"
