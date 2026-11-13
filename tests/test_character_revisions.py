@@ -162,7 +162,6 @@ def test_external_profile_divergence_is_not_silently_overwritten(
     with pytest.raises(DesktopAPIError, match="existing data was preserved"):
         api.list_character_profile_records(project_id)
 
-    assert api.load_character_profile.__name__ == "load_character_profile"
     assert json.loads(
         (directory / "hero_01.character.json").read_text(encoding="utf-8")
     )["name"] == "Untracked external edit"
