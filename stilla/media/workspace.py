@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -10,9 +11,9 @@ import stat
 import tempfile
 import threading
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
-from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -117,7 +118,12 @@ class ProjectWorkspace:
         project = self._project_dir(project_id)
         if not project.is_dir():
             raise WorkspaceError("project does not exist")
-        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout <= 0:
+        if (
+            isinstance(timeout, bool)
+            or not isinstance(timeout, (int, float))
+            or not math.isfinite(timeout)
+            or timeout <= 0
+        ):
             raise WorkspaceError("project lock timeout must be a positive number")
         lock_path = project / ".stilla.lock"
         if lock_path.is_symlink():
