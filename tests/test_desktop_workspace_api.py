@@ -34,7 +34,7 @@ def _profile() -> dict:
 def test_runtime_info_exposes_only_declared_runtime_metadata(api: DesktopWorkspaceAPI) -> None:
     info = api.get_runtime_info()
     assert info["runtime"] == "pywebview"
-    assert info["bridge_version"] == 1
+    assert info["bridge_version"] == 2
     assert info["ready"] is True
     assert not hasattr(api, "open_path")
     assert not hasattr(api, "run_command")
@@ -248,3 +248,30 @@ def test_storyboard_load_rejects_symlink_document_directory(
     (project / "documents").symlink_to(outside, target_is_directory=True)
     with pytest.raises(DesktopAPIError, match="unsafe"):
         api.load_document(project_id, "storyboard")
+
+
+
+def test_versioned_storyboard_api_rejects_stale_document_revision(
+    api: DesktopWorkspaceAPI,
+) -> None:
+    project_id = _project(api)
+    initial = api.load_document_versioned(project_id, "storyboard")
+    assert initial["revision"] is None
+    saved = api.save_document_versioned(
+        project_id, "storyboard", _empty_storyboard(), initial["revision"]
+    )
+    assert saved["revision"]
+
+    with pytest.raises(DesktopAPIError, match="changed in another window"):
+        api.save_document_versioned(
+            project_id, "storyboard", _empty_storyboard(), initial["revision"]
+        )
+
+    assert api.load_document(project_id, "storyboard") == _empty_storyboard()
+
+
+def test_missing_legacy_document_still_returns_a_sanitized_error(
+    api: DesktopWorkspaceAPI,
+) -> None:
+    with pytest.raises(DesktopAPIError, match="Could not load"):
+        api.load_document(_project(api), "brief")
