@@ -14,16 +14,25 @@ from stilla.media.workspace import (
 )
 
 
-def _hold_project_lock(root: str, project_id: str, entered: object) -> None:
+def _hold_project_lock(
+    root: str, project_id: str, entered: object, attempting: object, released: object
+) -> None:
     with ProjectWorkspace(root).project_lock(project_id):
         entered.set()
-        time.sleep(0.35)
+        if not attempting.wait(timeout=5):
+            raise RuntimeError("second process did not attempt the project lock")
+        time.sleep(1)
+    released.set()
 
 
-def _wait_for_project_lock(root: str, project_id: str, results: object) -> None:
-    started = time.monotonic()
+def _wait_for_project_lock(
+    root: str, project_id: str, attempting: object, released: object, acquired: object
+) -> None:
+    attempting.set()
     with ProjectWorkspace(root).project_lock(project_id, timeout=5):
-        results.put(time.monotonic() - started)
+        if not released.is_set():
+            raise AssertionError("second process entered before the first released the lock")
+        acquired.set()
 
 
 def test_versioned_document_write_rejects_stale_revision(tmp_path: Path) -> None:
@@ -91,20 +100,28 @@ def test_project_lock_serializes_independent_processes(tmp_path: Path) -> None:
     ProjectWorkspace(root).create_project("project_01", "Process lock")
     context = multiprocessing.get_context("spawn")
     entered = context.Event()
-    results = context.Queue()
-    holder = context.Process(target=_hold_project_lock, args=(str(root), "project_01", entered))
-    waiter = context.Process(target=_wait_for_project_lock, args=(str(root), "project_01", results))
+    attempting = context.Event()
+    released = context.Event()
+    acquired = context.Event()
+    holder = context.Process(
+        target=_hold_project_lock,
+        args=(str(root), "project_01", entered, attempting, released),
+    )
+    waiter = context.Process(
+        target=_wait_for_project_lock,
+        args=(str(root), "project_01", attempting, released, acquired),
+    )
 
     holder.start()
     assert entered.wait(timeout=5)
     waiter.start()
-    elapsed = results.get(timeout=8)
+    assert acquired.wait(timeout=8)
     holder.join(timeout=8)
     waiter.join(timeout=8)
 
+    assert released.is_set()
     assert holder.exitcode == 0
     assert waiter.exitcode == 0
-    assert elapsed >= 0.20
 
 
 def test_project_lock_rejects_symbolic_link_lock_file(tmp_path: Path) -> None:
