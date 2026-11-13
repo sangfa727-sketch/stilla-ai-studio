@@ -15,10 +15,23 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from stilla.characters.revisions import (
+    CharacterRevisionError,
+    append_character_revision,
+    create_character_revision_ledger,
+    load_character_revision_ledger,
+    mark_character_deleted,
+    profile_digest,
+    save_character_revision_ledger,
+)
 from stilla.characters.schema import CharacterProfile, CharacterProfileError
 from stilla.characters.storage import CharacterStorageError, load_character, save_character
 from stilla.characters.storyboard import CharacterBoundShotPlan, StoryboardBindingError
-from stilla.media.workspace import ProjectWorkspace, WorkspaceError
+from stilla.media.workspace import (
+    ProjectWorkspace,
+    WorkspaceConflictError,
+    WorkspaceError,
+)
 
 _PROJECT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 _CHARACTER_ID = _PROJECT_ID
@@ -49,7 +62,7 @@ class DesktopWorkspaceAPI:
     def get_runtime_info(self) -> dict[str, Any]:
         return {
             "runtime": "pywebview",
-            "bridge_version": 1,
+            "bridge_version": 2,
             "workspace_root": str(self._workspace.root),
             "ready": True,
         }
@@ -87,13 +100,7 @@ class DesktopWorkspaceAPI:
 
     def save_document(self, project_id: str, name: str, value: Any) -> dict[str, Any]:
         self._require_project(project_id)
-        if name not in {"brief", "script", "storyboard", "settings"}:
-            raise DesktopAPIError("Unsupported project document")
-        if name == "storyboard":
-            try:
-                value = CharacterBoundShotPlan.from_dict(value).to_dict()
-            except (StoryboardBindingError, TypeError):
-                raise DesktopAPIError("Storyboard data failed validation") from None
+        self._validate_document(name, value)
         self._bounded_json(value)
         with self._lock:
             try:
@@ -103,75 +110,123 @@ class DesktopWorkspaceAPI:
         return {"saved": True, "project_id": project_id, "document": name}
 
     def load_document(self, project_id: str, name: str) -> Any:
-        project = self._require_project(project_id)
+        return self.load_document_versioned(project_id, name)["value"]
+
+    def load_document_versioned(self, project_id: str, name: str) -> dict[str, Any]:
+        self._require_project(project_id)
         if name not in {"brief", "script", "storyboard", "settings"}:
             raise DesktopAPIError("Unsupported project document")
-        if name == "storyboard":
-            documents = project / "documents"
-            target = documents / "storyboard.json"
-            if documents.is_symlink() or target.is_symlink():
-                raise DesktopAPIError("Stored storyboard path is unsafe")
-            if not documents.exists() and not target.exists():
-                return {
-                    "schema_version": 1,
-                    "shot_plan": {"id": "story_plan", "title": "Project storyboard", "shots": []},
-                    "character_revisions": [],
-                    "bindings": [],
-                }
-            if not documents.is_dir():
-                raise DesktopAPIError("Stored storyboard directory is unsafe")
-            if not target.exists():
-                return {
-                    "schema_version": 1,
-                    "shot_plan": {"id": "story_plan", "title": "Project storyboard", "shots": []},
-                    "character_revisions": [],
-                    "bindings": [],
-                }
         with self._lock:
             try:
-                value = self._workspace.load_document(project_id, name)
+                result = self._workspace.load_document_versioned(project_id, name)
             except (OSError, WorkspaceError):
                 raise DesktopAPIError("Could not load project document") from None
-        if name == "storyboard":
-            try:
-                return CharacterBoundShotPlan.from_dict(value).to_dict()
-            except (StoryboardBindingError, TypeError):
-                raise DesktopAPIError("Stored storyboard failed validation") from None
-        return value
+        value = result["value"]
+        if value is None and name == "storyboard":
+            value = self._empty_storyboard()
+        elif value is not None:
+            self._validate_document(name, value)
+        return {"value": value, "revision": result["revision"]}
 
-    def save_character_profile(self, project_id: str, profile_data: Any) -> dict[str, Any]:
+    def save_document_versioned(
+        self, project_id: str, name: str, value: Any, expected_revision: str | None
+    ) -> dict[str, Any]:
+        self._require_project(project_id)
+        self._validate_document(name, value)
+        self._bounded_json(value)
+        with self._lock:
+            try:
+                revision = self._workspace.save_document_versioned(
+                    project_id, name, value, expected_revision
+                )
+            except WorkspaceConflictError:
+                raise DesktopAPIError(
+                    "This document changed in another window. Reload it before saving."
+                ) from None
+            except (OSError, WorkspaceError):
+                raise DesktopAPIError("Could not save project document") from None
+        return {
+            "saved": True,
+            "project_id": project_id,
+            "document": name,
+            "revision": revision,
+        }
+
+    def save_character_profile(
+        self, project_id: str, profile_data: Any, expected_revision: int | None = None
+    ) -> dict[str, Any]:
         project = self._require_project(project_id)
         try:
             profile = CharacterProfile.from_dict(profile_data)
         except (CharacterProfileError, TypeError):
             raise DesktopAPIError("Character profile failed validation") from None
+        if expected_revision is not None and (
+            isinstance(expected_revision, bool)
+            or not isinstance(expected_revision, int)
+            or expected_revision < 0
+        ):
+            raise DesktopAPIError("Expected character revision is invalid")
         directory = project / "characters"
         self._safe_directory(directory, project)
-        with self._lock:
+        with self._lock, self._workspace.project_lock(project_id):
             try:
-                target = save_character(directory, profile)
-            except (OSError, CharacterStorageError):
-                raise DesktopAPIError("Could not save character profile") from None
-        return {"saved": True, "character_id": profile.id, "file": target.name}
+                record = self._load_character_record_locked(directory, profile.id)
+                ledger = load_character_revision_ledger(directory, profile.id)
+                if ledger is not None and ledger["deleted_at"] is not None:
+                    raise DesktopAPIError("Deleted character IDs cannot be reused")
+                current_revision = record["revision"] if record else 0
+                if expected_revision is not None and expected_revision != current_revision:
+                    raise DesktopAPIError(
+                        "This character changed in another window. Reload it before saving."
+                    )
+                if ledger is None:
+                    ledger = create_character_revision_ledger(profile)
+                else:
+                    ledger = append_character_revision(ledger, profile)
+                save_character_revision_ledger(directory, ledger)
+                mirror_recovery_pending = False
+                try:
+                    save_character(directory, profile)
+                except (OSError, CharacterStorageError):
+                    # The immutable ledger is authoritative; the legacy profile file is a mirror.
+                    mirror_recovery_pending = True
+            except DesktopAPIError:
+                raise
+            except (CharacterRevisionError, CharacterStorageError, OSError):
+                raise DesktopAPIError("Could not safely save character revision") from None
+        return {
+            "saved": True,
+            "character_id": profile.id,
+            "revision": ledger["current_revision"],
+            "updated_at": ledger["updated_at"],
+            "mirror_recovery_pending": mirror_recovery_pending,
+        }
 
-    def list_character_profiles(self, project_id: str) -> list[dict[str, Any]]:
+    def list_character_profile_records(self, project_id: str) -> list[dict[str, Any]]:
         project = self._require_project(project_id)
         directory = project / "characters"
         self._safe_directory(directory, project)
-        profiles: list[dict[str, Any]] = []
-        with self._lock:
-            for path in sorted(directory.glob("*.character.json")):
-                if path.is_symlink() or not path.is_file():
-                    continue
-                character_id = path.name.removesuffix(".character.json")
-                if not _CHARACTER_ID.fullmatch(character_id):
-                    continue
-                try:
-                    profiles.append(load_character(directory, character_id).to_dict())
-                except (OSError, CharacterStorageError):
-                    # A corrupt profile is skipped, never silently rewritten.
-                    continue
-        return profiles
+        revisions_dir = directory / "revisions"
+        self._safe_directory(revisions_dir, project)
+        identifiers: set[str] = set()
+        for path in directory.glob("*.character.json"):
+            character_id = path.name.removesuffix(".character.json")
+            if _CHARACTER_ID.fullmatch(character_id):
+                identifiers.add(character_id)
+        for path in revisions_dir.glob("*.revisions.json"):
+            character_id = path.name.removesuffix(".revisions.json")
+            if _CHARACTER_ID.fullmatch(character_id):
+                identifiers.add(character_id)
+        records: list[dict[str, Any]] = []
+        with self._lock, self._workspace.project_lock(project_id):
+            for character_id in sorted(identifiers):
+                record = self._load_character_record_locked(directory, character_id)
+                if record is not None:
+                    records.append(record)
+        return sorted(records, key=lambda item: item["updated_at"], reverse=True)
+
+    def list_character_profiles(self, project_id: str) -> list[dict[str, Any]]:
+        return [record["profile"] for record in self.list_character_profile_records(project_id)]
 
     def delete_character_profile(self, project_id: str, character_id: str) -> dict[str, Any]:
         project = self._require_project(project_id)
@@ -180,28 +235,47 @@ class DesktopWorkspaceAPI:
         directory = project / "characters"
         self._safe_directory(directory, project)
         target = directory / f"{character_id}.character.json"
-        with self._lock:
-            if target.is_symlink():
-                raise DesktopAPIError("Character profile path is unsafe")
+        with self._lock, self._workspace.project_lock(project_id):
             try:
-                target.unlink()
-            except FileNotFoundError:
-                raise DesktopAPIError("Character profile does not exist") from None
-            except OSError:
-                raise DesktopAPIError("Could not delete character profile") from None
-        return {"deleted": True, "character_id": character_id}
+                record = self._load_character_record_locked(directory, character_id)
+                if record is None:
+                    raise DesktopAPIError("Character profile does not exist")
+                ledger = load_character_revision_ledger(directory, character_id)
+                if ledger is None:
+                    raise DesktopAPIError("Character revision history is unavailable")
+                save_character_revision_ledger(directory, mark_character_deleted(ledger))
+                cleanup_pending = False
+                if target.is_symlink():
+                    raise DesktopAPIError("Character profile path is unsafe")
+                try:
+                    target.unlink(missing_ok=True)
+                except OSError:
+                    cleanup_pending = True
+            except DesktopAPIError:
+                raise
+            except (CharacterRevisionError, CharacterStorageError, OSError):
+                raise DesktopAPIError("Could not safely delete character profile") from None
+        return {
+            "deleted": True,
+            "character_id": character_id,
+            "history_preserved": True,
+            "cleanup_pending": cleanup_pending,
+        }
 
     def load_character_profile(self, project_id: str, character_id: str) -> dict[str, Any]:
-        project = self._require_project(project_id)
         if not isinstance(character_id, str) or not _CHARACTER_ID.fullmatch(character_id):
             raise DesktopAPIError("Invalid character identifier")
+        project = self._require_project(project_id)
         directory = project / "characters"
         self._safe_directory(directory, project)
-        with self._lock:
+        with self._lock, self._workspace.project_lock(project_id):
             try:
-                return load_character(directory, character_id).to_dict()
-            except (OSError, CharacterStorageError):
-                raise DesktopAPIError("Could not load character profile") from None
+                record = self._load_character_record_locked(directory, character_id)
+            except (CharacterRevisionError, CharacterStorageError, OSError):
+                raise DesktopAPIError("Could not safely load character profile") from None
+        if record is None:
+            raise DesktopAPIError("Character profile does not exist")
+        return record["profile"]
 
     def import_character_reference(self, project_id: str, character_id: str) -> dict[str, Any]:
         """Import an image only through a native picker; never accept a JS-provided path."""
@@ -239,7 +313,7 @@ class DesktopWorkspaceAPI:
         target = project / relative
         self._safe_directory(target.parent, project)
         digest = hashlib.sha256(raw).hexdigest()
-        with self._lock:
+        with self._lock, self._workspace.project_lock(project_id):
             self._atomic_create(target, raw)
         return {
             "cancelled": False,
@@ -248,6 +322,57 @@ class DesktopWorkspaceAPI:
             "mime_type": {"png": "image/png", "jpeg": "image/jpeg", "webp": "image/webp"}[kind],
             "size_bytes": len(raw),
             "sha256": digest,
+        }
+
+    def _load_character_record_locked(
+        self, directory: Path, character_id: str
+    ) -> dict[str, Any] | None:
+        profile_path = directory / f"{character_id}.character.json"
+        if profile_path.is_symlink():
+            raise CharacterStorageError("Character profile path is unsafe")
+        current_profile = None
+        if profile_path.exists():
+            current_profile = load_character(directory, character_id)
+        ledger = load_character_revision_ledger(directory, character_id)
+        if ledger is None:
+            if current_profile is None:
+                return None
+            ledger = create_character_revision_ledger(current_profile)
+            save_character_revision_ledger(directory, ledger)
+            return {
+                "profile": current_profile.to_dict(),
+                "revision": 1,
+                "updated_at": ledger["updated_at"],
+                "mirror_recovery_pending": False,
+            }
+        if ledger["deleted_at"] is not None:
+            if profile_path.exists():
+                profile_path.unlink()
+            return None
+
+        latest = ledger["revisions"][-1]
+        latest_profile = CharacterProfile.from_dict(latest["profile"])
+        current_digest = profile_digest(current_profile) if current_profile is not None else None
+        mirror_recovery_pending = current_digest != latest["profile_sha256"]
+        if mirror_recovery_pending:
+            previous_digests = {
+                entry["profile_sha256"] for entry in ledger["revisions"][:-1]
+            }
+            if current_digest is not None and current_digest not in previous_digests:
+                raise CharacterRevisionError(
+                    "Current character profile diverges from its immutable revision history"
+                )
+            try:
+                save_character(directory, latest_profile)
+                mirror_recovery_pending = False
+            except (OSError, CharacterStorageError):
+                # The validated immutable ledger remains readable and is the source of truth.
+                mirror_recovery_pending = True
+        return {
+            "profile": latest_profile.to_dict(),
+            "revision": ledger["current_revision"],
+            "updated_at": ledger["updated_at"],
+            "mirror_recovery_pending": mirror_recovery_pending,
         }
 
     def _require_project(self, project_id: str) -> Path:
@@ -312,3 +437,26 @@ class DesktopWorkspaceAPI:
             raise DesktopAPIError("Document must contain valid JSON data") from None
         if len(raw) > 2_000_000:
             raise DesktopAPIError("Document exceeds the 2 MB limit")
+
+    @staticmethod
+    def _empty_storyboard() -> dict[str, Any]:
+        return {
+            "schema_version": 1,
+            "shot_plan": {
+                "id": "story_plan",
+                "title": "Project storyboard",
+                "shots": [],
+            },
+            "character_revisions": [],
+            "bindings": [],
+        }
+
+    @staticmethod
+    def _validate_document(name: str, value: Any) -> None:
+        if name not in {"brief", "script", "storyboard", "settings"}:
+            raise DesktopAPIError("Unsupported project document")
+        if name == "storyboard":
+            try:
+                CharacterBoundShotPlan.from_dict(value)
+            except (StoryboardBindingError, TypeError):
+                raise DesktopAPIError("Storyboard data failed validation") from None
