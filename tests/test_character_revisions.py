@@ -165,3 +165,20 @@ def test_external_profile_divergence_is_not_silently_overwritten(
     assert json.loads(
         (directory / "hero_01.character.json").read_text(encoding="utf-8")
     )["name"] == "Untracked external edit"
+
+
+
+def test_tombstone_hides_and_cleans_a_leftover_profile_mirror(
+    api: DesktopWorkspaceAPI,
+) -> None:
+    project_id = _project(api)
+    directory = _character_dir(api, project_id)
+    profile = CharacterProfile.from_dict(_profile())
+    api.save_character_profile(project_id, profile.to_dict(), expected_revision=0)
+    api.delete_character_profile(project_id, "hero_01")
+
+    # Simulate interruption after tombstone commit but before mirror deletion.
+    save_character(directory, profile)
+
+    assert api.list_character_profile_records(project_id) == []
+    assert not (directory / "hero_01.character.json").exists()
