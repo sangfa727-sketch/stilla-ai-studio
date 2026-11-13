@@ -129,3 +129,13 @@ def test_legacy_document_save_remains_compatible(tmp_path: Path) -> None:
     workspace.create_project("project_01", "Compatibility")
     workspace.save_document("project_01", "brief", {"idea": "local"})
     assert workspace.load_document("project_01", "brief") == {"idea": "local"}
+
+
+
+def test_project_lock_does_not_mask_operation_errors(tmp_path: Path) -> None:
+    workspace = ProjectWorkspace(tmp_path / "workspace")
+    workspace.create_project("project_01", "Error propagation")
+
+    with pytest.raises(OSError, match="operation failed"):
+        with workspace.project_lock("project_01"):
+            raise OSError("operation failed")
