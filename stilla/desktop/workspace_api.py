@@ -69,7 +69,6 @@ class DesktopWorkspaceAPI:
 
     def choose_workspace_directory(self) -> dict[str, Any]:
         """Open a native directory picker; JS cannot supply an arbitrary filesystem path."""
-        self._safe_directory(project / "characters", project)
         if self._window is None:
             raise DesktopAPIError("Desktop window is not ready")
         import webview
@@ -286,6 +285,7 @@ class DesktopWorkspaceAPI:
         project = self._require_project(project_id)
         if not isinstance(character_id, str) or not _CHARACTER_ID.fullmatch(character_id):
             raise DesktopAPIError("Invalid character identifier")
+        self._safe_directory(project / "characters", project)
         if self._window is None:
             raise DesktopAPIError("Desktop window is not ready")
         import webview
