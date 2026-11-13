@@ -119,9 +119,8 @@ def test_project_lock_rejects_symbolic_link_lock_file(tmp_path: Path) -> None:
     except (OSError, NotImplementedError):
         pytest.skip("symlink creation unavailable on this platform")
 
-    with pytest.raises(WorkspaceError, match="unsafe"):
-        with workspace.project_lock("project_01"):
-            pass
+    with pytest.raises(WorkspaceError, match="unsafe"), workspace.project_lock("project_01"):
+        pass
 
 
 def test_legacy_document_save_remains_compatible(tmp_path: Path) -> None:
@@ -136,6 +135,5 @@ def test_project_lock_does_not_mask_operation_errors(tmp_path: Path) -> None:
     workspace = ProjectWorkspace(tmp_path / "workspace")
     workspace.create_project("project_01", "Error propagation")
 
-    with pytest.raises(OSError, match="operation failed"):
-        with workspace.project_lock("project_01"):
-            raise OSError("operation failed")
+    with pytest.raises(OSError, match="operation failed"), workspace.project_lock("project_01"):
+        raise OSError("operation failed")
