@@ -528,6 +528,7 @@ class DesktopWorkspaceAPI:
                 or not _CHARACTER_ID.fullmatch(character_id)
                 or not isinstance(asset_id, str)
                 or not _TRANSACTION_ID.fullmatch(asset_id)
+                or not isinstance(extension, str)
                 or extension not in {".png", ".jpg", ".webp"}
                 or not isinstance(digest, str)
                 or not re.fullmatch(r"[a-f0-9]{64}", digest)
