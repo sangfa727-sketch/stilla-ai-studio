@@ -322,6 +322,8 @@ class DesktopWorkspaceAPI:
             return {"cancelled": True}
 
         source = Path(selected[0])
+        if source.is_symlink():
+            raise DesktopAPIError("Selected image must not be a symbolic link")
         try:
             flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
             with os.fdopen(os.open(source, flags), "rb") as stream:
@@ -354,8 +356,6 @@ class DesktopWorkspaceAPI:
         journal_path = journal_dir / f"{transaction_id}.json"
         digest = hashlib.sha256(raw).hexdigest()
         self._safe_directory(project / "characters", project)
-        self._safe_directory(target.parent, project)
-        self._safe_directory(journal_dir, project)
 
         try:
             with self._lock, self._workspace.project_lock(project_id):
@@ -390,6 +390,8 @@ class DesktopWorkspaceAPI:
                     reference.to_dict(),
                 ]
                 updated_profile = CharacterProfile.from_dict(updated_data)
+                self._safe_directory(target.parent, project)
+                self._safe_directory(journal_dir, project)
                 journal = {
                     "schema_version": 1,
                     "transaction_id": transaction_id,
@@ -496,7 +498,8 @@ class DesktopWorkspaceAPI:
             if not _TRANSACTION_ID.fullmatch(transaction_id) or journal_path.name != f"{transaction_id}.json":
                 raise CharacterRevisionError("Reference transaction journal name is invalid")
             try:
-                raw_journal = journal_path.read_bytes()
+                with journal_path.open("rb") as stream:
+                    raw_journal = stream.read(4097)
                 if len(raw_journal) > 4096:
                     raise CharacterRevisionError("Reference transaction journal is too large")
                 journal = json.loads(raw_journal.decode("utf-8"))
@@ -541,10 +544,11 @@ class DesktopWorkspaceAPI:
                 / f"{asset_id}{extension}"
             ).as_posix()
             asset_path = project / Path(relative)
+            asset_directory = project
             for part in ("characters", "references", character_id):
-                directory = project / part if part == "characters" else directory / part
-                if directory.is_symlink() or (
-                    directory.exists() and not directory.is_dir()
+                asset_directory = asset_directory / part
+                if asset_directory.is_symlink() or (
+                    asset_directory.exists() and not asset_directory.is_dir()
                 ):
                     raise CharacterRevisionError("Reference transaction asset directory is unsafe")
             ledger = load_character_revision_ledger(
@@ -570,7 +574,8 @@ class DesktopWorkspaceAPI:
                 if not asset_path.is_file() or asset_path.stat().st_size > _MAX_REFERENCE_BYTES:
                     raise CharacterRevisionError("Reference transaction asset is not a bounded file")
                 try:
-                    asset_bytes = asset_path.read_bytes()
+                    with asset_path.open("rb") as stream:
+                        asset_bytes = stream.read(_MAX_REFERENCE_BYTES + 1)
                 except OSError:
                     raise CharacterRevisionError("Reference transaction asset cannot be read") from None
                 if len(asset_bytes) != size_bytes or hashlib.sha256(asset_bytes).hexdigest() != digest:
