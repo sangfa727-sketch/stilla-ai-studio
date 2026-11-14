@@ -86,7 +86,7 @@ test("desktop bridge uses the transactional reference attachment API", async () 
     addEventListener() {},
   };
   vm.runInNewContext(source, { window, URLSearchParams });
-  const result = await window.STILLABridge.importCharacterReference(
+  const result = await window.STILLABridge.importCharacterReferenceAndSave(
     "project_1", "hero_1", 1,
   );
 
@@ -95,5 +95,32 @@ test("desktop bridge uses the transactional reference attachment API", async () 
   assert.deepEqual(result.profile, profile);
   assert.deepEqual(calls, [[
     "import_character_reference_and_save", "project_1", "hero_1", 1,
+  ]]);
+});
+
+
+test("desktop bridge retains the legacy reference import method", async () => {
+  const calls = [];
+  const api = new Proxy({}, {
+    get(_target, method) {
+      return async (...args) => {
+        calls.push([String(method), ...args]);
+        return { cancelled: true };
+      };
+    },
+  });
+  const window = {
+    location: { search: "?runtime=desktop" },
+    pywebview: { api },
+    addEventListener() {},
+  };
+  vm.runInNewContext(source, { window, URLSearchParams });
+  const result = await window.STILLABridge.importCharacterReference(
+    "project_1", "hero_1",
+  );
+
+  assert.equal(result.cancelled, true);
+  assert.deepEqual(calls, [[
+    "import_character_reference", "project_1", "hero_1",
   ]]);
 });
