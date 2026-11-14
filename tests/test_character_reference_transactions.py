@@ -140,9 +140,11 @@ def test_failed_revision_commit_rolls_back_imported_asset_and_journal(
 
     project = api._workspace.root / "projects" / project_id
     references = project / "characters" / "references"
-    assert not list(references.rglob("*.png")) if references.exists() else True
+    if references.exists():
+        assert not list(references.rglob("*.png"))
     journal_dir = project / ".stilla-reference-transactions"
-    assert not list(journal_dir.glob("*.json")) if journal_dir.exists() else True
+    if journal_dir.exists():
+        assert not list(journal_dir.glob("*.json"))
     assert api.load_character_profile(project_id, "hero_01")["references"] == []
 
 
