@@ -32,7 +32,9 @@
     saveCharacter: (projectId, profile, expectedRevision) =>
       call("save_character_profile", projectId, profile, expectedRevision),
     deleteCharacter: (projectId, characterId) => call("delete_character_profile", projectId, characterId),
-    importCharacterReference: (projectId, characterId, expectedRevision) =>
+    importCharacterReference: (projectId, characterId) =>
+      call("import_character_reference", projectId, characterId),
+    importCharacterReferenceAndSave: (projectId, characterId, expectedRevision) =>
       call("import_character_reference_and_save", projectId, characterId, expectedRevision),
     saveDocument: (projectId, name, value) => call("save_document", projectId, name, value),
     loadDocument: (projectId, name) => call("load_document", projectId, name),
