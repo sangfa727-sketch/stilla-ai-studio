@@ -40,7 +40,7 @@ _CHARACTER_ID = _PROJECT_ID
 _MAX_REFERENCE_BYTES = 10 * 1024 * 1024
 _REFERENCE_TRANSACTION_DIR = ".stilla-reference-transactions"
 _TRANSACTION_ID = re.compile(r"^[a-f0-9]{32}$")
-_ASSET_FILENAME = re.compile(r"^[A-Za-z0-9_-]{1,64}\.(?:png|jpg|webp)$")
+_ASSET_FILENAME = re.compile(r"^[a-f0-9]{32}\.(?:png|jpg|webp)$")
 _ALLOWED_IMAGES = {
     "png": (".png", lambda b: b.startswith(b"\x89PNG\r\n\x1a\n")),
     "jpeg": (".jpg", lambda b: b.startswith(b"\xff\xd8\xff")),
