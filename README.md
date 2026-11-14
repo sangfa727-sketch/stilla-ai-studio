@@ -89,12 +89,14 @@ project management, validated documents, character profiles, and native referenc
 image import. M7e connected project and character persistence; M7f connected the
 Storyboard character-binding workflow. M7g adds an append-only project-local character
 revision ledger, cross-process project locks, and compare-and-swap saves for desktop
-characters and Storyboards. The legacy character profile and bundle formats remain
+characters and Storyboards. M7h adds journaled native reference-image attachment,
+crash recovery, and conservative orphan cleanup that preserves assets referenced by any
+immutable character revision. The legacy character profile and bundle formats remain
 unchanged.
 
 The revision ledger is authoritative for desktop character history. Browser-only mode
 continues to use browser-local storage and does not gain project-folder durability.
-Reference image previews, automatic orphan cleanup, ComfyUI reference conditioning,
+Desktop reference-image previews, full image decoding, ComfyUI reference conditioning,
 Windows installer packaging, and phone-native installation are not included yet.
 Windows native dialogs, msvcrt locking, Burmese font rendering, restart recovery, and
 local GPU/model smoke tests still require acceptance on the user's PC. The project is
