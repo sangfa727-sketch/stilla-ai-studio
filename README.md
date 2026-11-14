@@ -72,7 +72,7 @@ No license has been selected yet. Do not assume this repository or any future th
 
 ## UI languages
 
-The desktop UX prototype supports an English (EN) and Burmese (MY) interface language selector in the top bar and Settings. The selected language is stored locally in the browser. This is UI localization only; character dialogue language remains a separate per-character setting. The current prototype does not yet provide a native desktop filesystem bridge or durable project-folder integration.
+The interface supports English (EN) and Burmese (MY). Character dialogue language remains a separate per-character setting. Browser mode keeps its own project-scoped prototype data in localStorage; it is not a substitute for durable desktop project storage.
 
 
 ## Optional Windows desktop runtime (M7e)
@@ -84,8 +84,19 @@ inside the optional PyWebView desktop host:
 2. Install the desktop extra: python -m pip install -e ".[desktop,dev]".
 3. Launch: python -m stilla.desktop.app.
 
-The desktop host exposes a narrow local bridge for project folders, validated project
-documents, character profiles, and native image import. The bridge is an integration
-foundation: the prototype's existing project and Character Library controls are not yet
-fully connected to durable storage. Do not treat demo project counts or sample assets
-as real data. Windows native-dialog and Burmese font acceptance is still required.
+The optional desktop host exposes a narrow local bridge for workspace selection,
+project management, validated documents, character profiles, and native reference
+image import. M7e connected project and character persistence; M7f connected the
+Storyboard character-binding workflow. M7g adds an append-only project-local character
+revision ledger, cross-process project locks, and compare-and-swap saves for desktop
+characters and Storyboards. The legacy character profile and bundle formats remain
+unchanged.
+
+The revision ledger is authoritative for desktop character history. Browser-only mode
+continues to use browser-local storage and does not gain project-folder durability.
+Reference image previews, automatic orphan cleanup, ComfyUI reference conditioning,
+Windows installer packaging, and phone-native installation are not included yet.
+Windows native dialogs, msvcrt locking, Burmese font rendering, restart recovery, and
+local GPU/model smoke tests still require acceptance on the user's PC. The project is
+not production-ready until those environment-specific checks and the remaining
+workflow gates are completed.

@@ -11,6 +11,19 @@ permissions:
   contents: read
 
 jobs:
+  windows-project-lock:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test tools
+        run: python -m pip install -e '.[dev]'
+      - name: Verify Windows file locking and local persistence
+        run: python -m pytest tests/test_media_workspace.py tests/test_character_revisions.py
+
   python-checks:
     runs-on: ubuntu-latest
     steps:

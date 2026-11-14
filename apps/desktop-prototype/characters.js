@@ -190,10 +190,16 @@
         const prior = selectedRecord();
         const profile = collectProfile(event.currentTarget, prior?.profile || null);
         if (!prior && items.length >= MAX_PROFILE_COUNT) throw new Error("The browser prototype supports up to 30 saved characters.");
-        const record = { profile, revision: (prior?.revision || 0) + 1,
+        const desktop = window.STILLABridge?.isDesktop();
+        const record = { profile, revision: desktop ? (prior?.revision || 0) : (prior?.revision || 0) + 1,
           updated_at: new Date().toISOString(),
           reference_previews: { ...(prior?.reference_previews || {}), ...draftPreviews } };
-        if (window.STILLABridge?.isDesktop()) await window.STILLABridge.saveCharacter(activeProjectId, profile);
+        if (desktop) {
+          const saved = await window.STILLABridge.saveCharacter(activeProjectId, profile, prior?.revision || 0);
+          record.revision = saved.revision;
+          record.updated_at = saved.updated_at;
+          record.mirror_recovery_pending = saved.mirror_recovery_pending;
+        }
         const next = items.filter((item) => item.profile.id !== profile.id);
         next.unshift(record);
         writeLibrary(next);
@@ -215,9 +221,10 @@
         const items = readLibrary();
         const current = items.find((item) => item.profile.id === selectedId);
         current.profile.references.push({ asset_id: imported.asset_id, relative_path: imported.relative_path, role: "reference", sha256: imported.sha256 });
-        current.revision += 1;
-        current.updated_at = new Date().toISOString();
-        await window.STILLABridge.saveCharacter(activeProjectId, current.profile);
+        const saved = await window.STILLABridge.saveCharacter(activeProjectId, current.profile, current.revision);
+        current.revision = saved.revision;
+        current.updated_at = saved.updated_at;
+        current.mirror_recovery_pending = saved.mirror_recovery_pending;
         writeLibrary(items);
         render();
       } catch (error) { alert("Reference import failed: " + error.message); }
@@ -255,10 +262,19 @@
       const items = readLibrary(); const record = items.find((item) => item.profile.id === selectedId);
       if (!record) return;
       const id = button.dataset.removeRef;
+      const expectedRevision = record.revision;
       record.profile.references = record.profile.references.filter((ref) => ref.asset_id !== id);
-      delete record.reference_previews[id]; record.revision += 1; record.updated_at = new Date().toISOString();
+      delete record.reference_previews[id];
       try {
-        if (window.STILLABridge?.isDesktop()) await window.STILLABridge.saveCharacter(activeProjectId, record.profile);
+        if (window.STILLABridge?.isDesktop()) {
+          const saved = await window.STILLABridge.saveCharacter(activeProjectId, record.profile, expectedRevision);
+          record.revision = saved.revision;
+          record.updated_at = saved.updated_at;
+          record.mirror_recovery_pending = saved.mirror_recovery_pending;
+        } else {
+          record.revision += 1;
+          record.updated_at = new Date().toISOString();
+        }
         writeLibrary(items); render();
       } catch (error) { alert("Could not update reference metadata: " + error.message); }
     }));
@@ -297,8 +313,14 @@
         });
         profile.id = freshId();
         profile.references = refs;
+        const desktop = window.STILLABridge?.isDesktop();
         const record = { profile, revision: 1, updated_at: new Date().toISOString(), reference_previews: previews };
-        if (window.STILLABridge?.isDesktop()) await window.STILLABridge.saveCharacter(activeProjectId, profile);
+        if (desktop) {
+          const saved = await window.STILLABridge.saveCharacter(activeProjectId, profile, 0);
+          record.revision = saved.revision;
+          record.updated_at = saved.updated_at;
+          record.mirror_recovery_pending = saved.mirror_recovery_pending;
+        }
         writeLibrary([record, ...items]);
         selectedId = profile.id; draftPreviews = {}; render();
       } catch (error) {
@@ -335,12 +357,14 @@
     draftPreviews = {};
     if (window.STILLABridge?.isDesktop()) {
       if (!activeProjectId) { writeLibrary([]); return; }
-      const profiles = await window.STILLABridge.listCharacters(activeProjectId);
-      const existing = readLibrary();
-      writeLibrary(profiles.map((profile) => {
-        const cached = existing.find((item) => item.profile.id === profile.id);
-        return { profile, revision: cached?.revision || 1, updated_at: cached?.updated_at || new Date().toISOString(), reference_previews: {} };
-      }));
+      const records = await window.STILLABridge.listCharacterRecords(activeProjectId);
+      writeLibrary(records.map((record) => ({
+        profile: record.profile,
+        revision: record.revision,
+        updated_at: record.updated_at,
+        reference_previews: {},
+        mirror_recovery_pending: record.mirror_recovery_pending
+      })));
     } else if (activeProjectId && !localStorage.getItem(storageKey()) &&
                !localStorage.getItem(KEY + ".project-migrated") && localStorage.getItem(KEY)) {
       // Preserve the pre-project browser library by migrating it once into the first project.
