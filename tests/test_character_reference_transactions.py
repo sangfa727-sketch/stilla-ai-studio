@@ -197,7 +197,7 @@ def test_startup_recovery_keeps_committed_asset_and_removes_stale_journal(
     project = api._workspace.root / "projects" / project_id
     transaction_id = "c" * 32
     journal_dir = project / ".stilla-reference-transactions"
-    journal_dir.mkdir()
+    journal_dir.mkdir(exist_ok=True)
     journal = {
         "schema_version": 1,
         "transaction_id": transaction_id,
