@@ -116,7 +116,7 @@
     ).join("") : '<div class="character-empty">No characters yet. Create an original character to begin your library.</div>';
     const refs = current ? current.profile.references.map((ref) => {
       const preview = current.reference_previews && current.reference_previews[ref.asset_id];
-      return '<div class="character-ref-card">' + (preview ? '<img src="' + preview + '" alt="Reference image ' + esc(ref.role) + '">' : '<div class="character-ref-placeholder">Image stored in project bundle</div>') +
+      return '<div class="character-ref-card">' + (preview ? '<img src="' + preview + '" alt="Reference image ' + esc(ref.role) + '">' : '<div class="character-ref-placeholder">Reference preview is not yet available in this desktop view.</div>') +
         '<div><strong>' + esc(ref.role) + '</strong><small>' + esc(ref.asset_id) + '</small></div><button type="button" class="quiet" data-remove-ref="' + esc(ref.asset_id) + '" aria-label="Remove reference">Remove</button></div>';
     }).join("") : "";
     return '<div class="page-head"><div><div class="eyebrow">STILLA STUDIO / CHARACTER WORKSPACE</div><h1>Character Creator</h1><p>Build original characters once, preserve their visual DNA and reuse them in future stories.</p></div><div class="head-actions"><button id="newCharacter">＋ New character</button><button id="importCharacterBundle">Import bundle</button><input id="characterBundleInput" type="file" accept="application/json,.json" hidden><button id="exportCharacter" ' + (current ? "" : "disabled") + '>Export bundle</button><button id="deleteCharacter" class="quiet" ' + (current ? "" : "disabled") + '>Delete</button></div></div>' +
@@ -126,7 +126,7 @@
       '<section class="card character-reference-section"><div class="character-section-head"><div><span class="eyebrow">04 / REFERENCE IMAGES</span><h2>Canonical visual references</h2><p class="small muted">Import approved images to help preserve identity. Use front, side, back and expression views where available.</p></div>' + (window.STILLABridge?.isDesktop() ? '<button type="button" id="importNativeReference">＋ Import from PC</button>' : '<label class="button-like" for="characterReferenceInput">＋ Add reference</label><input id="characterReferenceInput" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden>') + '</div>' +
       '<div class="character-reference-grid">' + (refs || '<div class="character-empty">No reference images added yet.</div>') + '</div>' +
       '<div class="row between character-sheet-row"><div><strong>Character reference sheet</strong><p class="small muted">Turnaround / expression sheet generation will be enabled after a verified local image workflow adapter is connected.</p></div><button type="button" disabled title="Local reference-sheet workflow is not connected">Generate sheet · unavailable</button></div></section>' +
-      '<div class="character-use-row"><div><strong>Reuse in Script & Storyboard</strong><p class="small muted">The selected profile can be exported as a validated M7a-compatible JSON bundle. Storyboard binding is a later integration step.</p></div><button type="button" id="copyCharacterPrompt" ' + (current ? "" : "disabled") + '>Copy identity brief</button></div>' +
+      '<div class="character-use-row"><div><strong>Reuse in Script & Storyboard</strong><p class="small muted">Export a validated character bundle or bind this character to shots in Script & Storyboard.</p></div><button type="button" id="copyCharacterPrompt" ' + (current ? "" : "disabled") + '>Copy identity brief</button></div>' +
       '</div></div>';
   };
   const setPath = (object, path, value) => {
@@ -216,15 +216,18 @@
         const record = selectedRecord();
         if (!record) throw new Error("Save the character first, then import reference images.");
         if (record.profile.references.length >= 20) throw new Error("A character can have up to 20 reference images.");
-        const imported = await window.STILLABridge.importCharacterReference(activeProjectId, selectedId);
+        const expectedRevision = record.revision;
+        const imported = await window.STILLABridge.importCharacterReference(
+          activeProjectId, selectedId, expectedRevision,
+        );
         if (imported.cancelled) return;
         const items = readLibrary();
         const current = items.find((item) => item.profile.id === selectedId);
-        current.profile.references.push({ asset_id: imported.asset_id, relative_path: imported.relative_path, role: "reference", sha256: imported.sha256 });
-        const saved = await window.STILLABridge.saveCharacter(activeProjectId, current.profile, current.revision);
-        current.revision = saved.revision;
-        current.updated_at = saved.updated_at;
-        current.mirror_recovery_pending = saved.mirror_recovery_pending;
+        if (!current) throw new Error("Character is no longer in the local library. Reload the project.");
+        current.profile = imported.profile;
+        current.revision = imported.revision;
+        current.updated_at = imported.updated_at;
+        current.mirror_recovery_pending = imported.mirror_recovery_pending;
         writeLibrary(items);
         render();
       } catch (error) { alert("Reference import failed: " + error.message); }
