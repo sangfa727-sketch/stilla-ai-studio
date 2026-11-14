@@ -22,7 +22,7 @@ jobs:
       - name: Install project and test tools
         run: python -m pip install -e '.[dev]'
       - name: Verify Windows file locking and local persistence
-        run: python -m pytest tests/test_media_workspace.py tests/test_character_revisions.py
+        run: python -m pytest tests/test_media_workspace.py tests/test_character_revisions.py tests/test_desktop_workspace_api.py tests/test_character_reference_transactions.py
 
   python-checks:
     runs-on: ubuntu-latest

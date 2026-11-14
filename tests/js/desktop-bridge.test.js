@@ -57,3 +57,70 @@ test("desktop bridge forwards durable revision and document CAS tokens", async (
     ["save_document_versioned", "project_1", "storyboard", { schema_version: 1 }, "a".repeat(64)],
   ]);
 });
+
+
+test("desktop bridge uses the transactional reference attachment API", async () => {
+  const calls = [];
+  const profile = { id: "hero_1", references: [{ asset_id: "asset_1" }] };
+  const api = new Proxy({}, {
+    get(_target, method) {
+      return async (...args) => {
+        calls.push([String(method), ...args]);
+        if (method === "import_character_reference_and_save") {
+          return {
+            cancelled: false,
+            saved: true,
+            profile,
+            revision: 2,
+            updated_at: "2026-11-14T00:00:00Z",
+            mirror_recovery_pending: false,
+          };
+        }
+        return null;
+      };
+    },
+  });
+  const window = {
+    location: { search: "?runtime=desktop" },
+    pywebview: { api },
+    addEventListener() {},
+  };
+  vm.runInNewContext(source, { window, URLSearchParams });
+  const result = await window.STILLABridge.importCharacterReferenceAndSave(
+    "project_1", "hero_1", 1,
+  );
+
+  assert.equal(result.saved, true);
+  assert.equal(result.revision, 2);
+  assert.deepEqual(result.profile, profile);
+  assert.deepEqual(calls, [[
+    "import_character_reference_and_save", "project_1", "hero_1", 1,
+  ]]);
+});
+
+
+test("desktop bridge retains the legacy reference import method", async () => {
+  const calls = [];
+  const api = new Proxy({}, {
+    get(_target, method) {
+      return async (...args) => {
+        calls.push([String(method), ...args]);
+        return { cancelled: true };
+      };
+    },
+  });
+  const window = {
+    location: { search: "?runtime=desktop" },
+    pywebview: { api },
+    addEventListener() {},
+  };
+  vm.runInNewContext(source, { window, URLSearchParams });
+  const result = await window.STILLABridge.importCharacterReference(
+    "project_1", "hero_1",
+  );
+
+  assert.equal(result.cancelled, true);
+  assert.deepEqual(calls, [[
+    "import_character_reference", "project_1", "hero_1",
+  ]]);
+});
