@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import tempfile
 import threading
 from pathlib import Path
@@ -24,18 +25,22 @@ from stilla.characters.revisions import (
     profile_digest,
     save_character_revision_ledger,
 )
-from stilla.characters.schema import CharacterProfile, CharacterProfileError
+from stilla.characters.schema import CharacterProfile, CharacterProfileError, CharacterReference
 from stilla.characters.storage import CharacterStorageError, load_character, save_character
 from stilla.characters.storyboard import CharacterBoundShotPlan, StoryboardBindingError
 from stilla.media.workspace import (
     ProjectWorkspace,
     WorkspaceConflictError,
     WorkspaceError,
+    atomic_write_bytes,
 )
 
 _PROJECT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 _CHARACTER_ID = _PROJECT_ID
 _MAX_REFERENCE_BYTES = 10 * 1024 * 1024
+_REFERENCE_TRANSACTION_DIR = ".stilla-reference-transactions"
+_TRANSACTION_ID = re.compile(r"^[a-f0-9]{32}$")
+_ASSET_FILENAME = re.compile(r"^[A-Za-z0-9_-]{1,64}\.(?:png|jpg|webp)$")
 _ALLOWED_IMAGES = {
     "png": (".png", lambda b: b.startswith(b"\x89PNG\r\n\x1a\n")),
     "jpeg": (".jpg", lambda b: b.startswith(b"\xff\xd8\xff")),
@@ -230,10 +235,12 @@ class DesktopWorkspaceAPI:
         records: list[dict[str, Any]] = []
         try:
             with self._lock, self._workspace.project_lock(project_id):
+                self._recover_reference_transactions_locked(project)
                 for character_id in sorted(identifiers):
                     record = self._load_character_record_locked(directory, character_id)
                     if record is not None:
                         records.append(record)
+                self._cleanup_orphan_reference_assets_locked(project, directory)
         except (CharacterRevisionError, CharacterStorageError, WorkspaceError, OSError):
             raise DesktopAPIError(
                 "Project character history failed validation; existing data was preserved."
@@ -287,6 +294,369 @@ class DesktopWorkspaceAPI:
         if record is None:
             raise DesktopAPIError("Character profile does not exist")
         return record["profile"]
+
+
+    def import_character_reference_and_save(
+        self, project_id: str, character_id: str, expected_revision: int
+    ) -> dict[str, Any]:
+        """Import and attach a native image as one recoverable character revision."""
+        project = self._require_project(project_id)
+        if not isinstance(character_id, str) or not _CHARACTER_ID.fullmatch(character_id):
+            raise DesktopAPIError("Invalid character identifier")
+        if (
+            isinstance(expected_revision, bool)
+            or not isinstance(expected_revision, int)
+            or expected_revision < 0
+        ):
+            raise DesktopAPIError("Expected character revision is invalid")
+        if self._window is None:
+            raise DesktopAPIError("Desktop window is not ready")
+        import webview
+
+        selected = self._window.create_file_dialog(
+            webview.OPEN_DIALOG,
+            allow_multiple=False,
+            file_types=("Image files (*.png;*.jpg;*.jpeg;*.webp)",),
+        )
+        if not selected:
+            return {"cancelled": True}
+
+        source = Path(selected[0])
+        try:
+            flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+            with os.fdopen(os.open(source, flags), "rb") as stream:
+                metadata = os.fstat(stream.fileno())
+                if not stat.S_ISREG(metadata.st_mode):
+                    raise DesktopAPIError("Selected image must be a regular file")
+                if metadata.st_size > _MAX_REFERENCE_BYTES:
+                    raise DesktopAPIError("Image must be no larger than 10 MiB")
+                raw = stream.read(_MAX_REFERENCE_BYTES + 1)
+        except DesktopAPIError:
+            raise
+        except OSError:
+            raise DesktopAPIError("Could not safely read the selected image") from None
+        if not raw or len(raw) > _MAX_REFERENCE_BYTES:
+            raise DesktopAPIError("Image must be between 1 byte and 10 MiB")
+        detected = next(
+            ((kind, suffix) for kind, (suffix, check) in _ALLOWED_IMAGES.items() if check(raw)),
+            None,
+        )
+        if detected is None:
+            raise DesktopAPIError("Only PNG, JPEG, and WebP image signatures are accepted")
+        kind, suffix = detected
+        asset_id = uuid4().hex
+        transaction_id = uuid4().hex
+        relative = (
+            Path("characters") / "references" / character_id / f"{asset_id}{suffix}"
+        ).as_posix()
+        target = project / Path(relative)
+        journal_dir = project / _REFERENCE_TRANSACTION_DIR
+        journal_path = journal_dir / f"{transaction_id}.json"
+        digest = hashlib.sha256(raw).hexdigest()
+        self._safe_directory(project / "characters", project)
+        self._safe_directory(target.parent, project)
+        self._safe_directory(journal_dir, project)
+
+        try:
+            with self._lock, self._workspace.project_lock(project_id):
+                self._recover_reference_transactions_locked(project)
+                record = self._load_character_record_locked(
+                    project / "characters", character_id
+                )
+                if record is None:
+                    raise DesktopAPIError("Character profile does not exist")
+                if record["revision"] != expected_revision:
+                    raise DesktopAPIError(
+                        "This character changed in another window. Reload it before importing."
+                    )
+                profile = CharacterProfile.from_dict(record["profile"])
+                if len(profile.references) >= 20:
+                    raise DesktopAPIError("A character can have up to 20 reference images")
+                ledger = load_character_revision_ledger(
+                    project / "characters", character_id
+                )
+                if ledger is None:
+                    raise DesktopAPIError("Character revision history is unavailable")
+
+                reference = CharacterReference(
+                    asset_id=asset_id,
+                    relative_path=relative,
+                    role="reference",
+                    sha256=digest,
+                )
+                updated_data = profile.to_dict()
+                updated_data["references"] = [
+                    *updated_data["references"],
+                    reference.to_dict(),
+                ]
+                updated_profile = CharacterProfile.from_dict(updated_data)
+                journal = {
+                    "schema_version": 1,
+                    "transaction_id": transaction_id,
+                    "character_id": character_id,
+                    "asset_id": asset_id,
+                    "extension": suffix,
+                    "sha256": digest,
+                    "size_bytes": len(raw),
+                }
+                if journal_path.exists() or journal_path.is_symlink():
+                    raise DesktopAPIError("Reference transaction identifier already exists")
+                try:
+                    encoded_journal = json.dumps(
+                        journal, sort_keys=True, separators=(",", ":"), allow_nan=False
+                    ).encode("utf-8")
+                    atomic_write_bytes(journal_path, encoded_journal)
+                    self._atomic_create(target, raw)
+                    self._sync_directory(target.parent)
+                    next_ledger = append_character_revision(ledger, updated_profile)
+                    save_character_revision_ledger(project / "characters", next_ledger)
+                except (
+                    DesktopAPIError,
+                    CharacterRevisionError,
+                    CharacterStorageError,
+                    WorkspaceError,
+                    OSError,
+                ) as error:
+                    try:
+                        self._recover_reference_transactions_locked(project)
+                    except (
+                        CharacterRevisionError,
+                        CharacterStorageError,
+                        WorkspaceError,
+                        OSError,
+                    ):
+                        raise DesktopAPIError(
+                            "Reference import failed; recovery data was preserved for the next launch"
+                        ) from None
+                    if isinstance(error, DesktopAPIError):
+                        raise
+                    raise DesktopAPIError(
+                        "Could not safely attach the reference image"
+                    ) from None
+
+                mirror_recovery_pending = False
+                try:
+                    save_character(project / "characters", updated_profile)
+                except (OSError, CharacterStorageError):
+                    mirror_recovery_pending = True
+                try:
+                    journal_path.unlink(missing_ok=True)
+                    self._sync_directory(journal_dir)
+                except OSError:
+                    # The committed ledger and asset are authoritative; recovery removes this journal.
+                    pass
+        except DesktopAPIError:
+            raise
+        except (
+            CharacterRevisionError,
+            CharacterStorageError,
+            WorkspaceError,
+            OSError,
+        ):
+            raise DesktopAPIError("Could not safely import character reference") from None
+
+        return {
+            "cancelled": False,
+            "saved": True,
+            "character_id": character_id,
+            "profile": updated_profile.to_dict(),
+            "revision": next_ledger["current_revision"],
+            "updated_at": next_ledger["updated_at"],
+            "mirror_recovery_pending": mirror_recovery_pending,
+            "reference": {
+                "asset_id": asset_id,
+                "relative_path": relative,
+                "mime_type": {
+                    "png": "image/png",
+                    "jpeg": "image/jpeg",
+                    "webp": "image/webp",
+                }[kind],
+                "size_bytes": len(raw),
+                "sha256": digest,
+            },
+        }
+
+    def _recover_reference_transactions_locked(self, project: Path) -> None:
+        """Finish or roll back interrupted image-attachment transactions."""
+        journal_dir = project / _REFERENCE_TRANSACTION_DIR
+        if journal_dir.is_symlink():
+            raise CharacterRevisionError("Reference transaction directory is unsafe")
+        if not journal_dir.exists():
+            return
+        if (
+            not journal_dir.is_dir()
+            or not journal_dir.resolve().is_relative_to(project.resolve())
+        ):
+            raise CharacterRevisionError("Reference transaction directory is unsafe")
+
+        for journal_path in sorted(journal_dir.iterdir()):
+            if journal_path.is_symlink() or not journal_path.is_file():
+                raise CharacterRevisionError("Reference transaction journal path is unsafe")
+            transaction_id = journal_path.name.removesuffix(".json")
+            if not _TRANSACTION_ID.fullmatch(transaction_id) or journal_path.name != f"{transaction_id}.json":
+                raise CharacterRevisionError("Reference transaction journal name is invalid")
+            try:
+                raw_journal = journal_path.read_bytes()
+                if len(raw_journal) > 4096:
+                    raise CharacterRevisionError("Reference transaction journal is too large")
+                journal = json.loads(raw_journal.decode("utf-8"))
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError, RecursionError):
+                raise CharacterRevisionError("Reference transaction journal is unreadable") from None
+            if not isinstance(journal, dict) or set(journal) != {
+                "schema_version",
+                "transaction_id",
+                "character_id",
+                "asset_id",
+                "extension",
+                "sha256",
+                "size_bytes",
+            }:
+                raise CharacterRevisionError("Reference transaction journal has an invalid structure")
+            character_id = journal["character_id"]
+            asset_id = journal["asset_id"]
+            extension = journal["extension"]
+            digest = journal["sha256"]
+            size_bytes = journal["size_bytes"]
+            if (
+                journal["schema_version"] != 1
+                or isinstance(journal["schema_version"], bool)
+                or journal["transaction_id"] != transaction_id
+                or not isinstance(character_id, str)
+                or not _CHARACTER_ID.fullmatch(character_id)
+                or not isinstance(asset_id, str)
+                or not _TRANSACTION_ID.fullmatch(asset_id)
+                or extension not in {".png", ".jpg", ".webp"}
+                or not isinstance(digest, str)
+                or not re.fullmatch(r"[a-f0-9]{64}", digest)
+                or isinstance(size_bytes, bool)
+                or not isinstance(size_bytes, int)
+                or not 1 <= size_bytes <= _MAX_REFERENCE_BYTES
+            ):
+                raise CharacterRevisionError("Reference transaction journal failed validation")
+
+            relative = (
+                Path("characters")
+                / "references"
+                / character_id
+                / f"{asset_id}{extension}"
+            ).as_posix()
+            asset_path = project / Path(relative)
+            for part in ("characters", "references", character_id):
+                directory = project / part if part == "characters" else directory / part
+                if directory.is_symlink() or (
+                    directory.exists() and not directory.is_dir()
+                ):
+                    raise CharacterRevisionError("Reference transaction asset directory is unsafe")
+            ledger = load_character_revision_ledger(
+                project / "characters", character_id
+            )
+            committed = False
+            if ledger is not None:
+                for entry in ledger["revisions"]:
+                    for reference in entry["profile"]["references"]:
+                        if reference["asset_id"] == asset_id:
+                            if (
+                                reference["relative_path"] != relative
+                                or reference["sha256"] != digest
+                            ):
+                                raise CharacterRevisionError(
+                                    "Reference transaction does not match its character revision"
+                                )
+                            committed = True
+
+            if asset_path.is_symlink():
+                raise CharacterRevisionError("Reference transaction asset path is unsafe")
+            if asset_path.exists():
+                if not asset_path.is_file() or asset_path.stat().st_size > _MAX_REFERENCE_BYTES:
+                    raise CharacterRevisionError("Reference transaction asset is not a bounded file")
+                try:
+                    asset_bytes = asset_path.read_bytes()
+                except OSError:
+                    raise CharacterRevisionError("Reference transaction asset cannot be read") from None
+                if len(asset_bytes) != size_bytes or hashlib.sha256(asset_bytes).hexdigest() != digest:
+                    raise CharacterRevisionError("Reference transaction asset checksum does not match")
+            elif committed:
+                raise CharacterRevisionError("Committed character reference asset is missing")
+
+            if not committed and asset_path.exists():
+                asset_path.unlink()
+                self._sync_directory(asset_path.parent)
+            journal_path.unlink()
+            self._sync_directory(journal_dir)
+
+        try:
+            journal_dir.rmdir()
+            self._sync_directory(project)
+        except OSError:
+            pass
+
+    def _cleanup_orphan_reference_assets_locked(
+        self, project: Path, characters_dir: Path
+    ) -> int:
+        """Remove only importer-owned assets absent from every immutable revision."""
+        references_root = characters_dir / "references"
+        if references_root.is_symlink():
+            raise CharacterStorageError("Character reference directory is unsafe")
+        if not references_root.exists():
+            return 0
+        if (
+            not references_root.is_dir()
+            or not references_root.resolve().is_relative_to(project.resolve())
+        ):
+            raise CharacterStorageError("Character reference directory is unsafe")
+
+        referenced_paths: set[str] = set()
+        revisions_dir = characters_dir / "revisions"
+        if revisions_dir.is_symlink():
+            raise CharacterRevisionError("Character revision directory is unsafe")
+        if revisions_dir.exists():
+            for ledger_path in revisions_dir.glob("*.revisions.json"):
+                if ledger_path.is_symlink():
+                    raise CharacterRevisionError("Character revision ledger path is unsafe")
+                character_id = ledger_path.name.removesuffix(".revisions.json")
+                if not _CHARACTER_ID.fullmatch(character_id):
+                    continue
+                ledger = load_character_revision_ledger(characters_dir, character_id)
+                if ledger is None:
+                    continue
+                for entry in ledger["revisions"]:
+                    for reference in entry["profile"]["references"]:
+                        referenced_paths.add(reference["relative_path"])
+
+        removed = 0
+        for character_dir in references_root.iterdir():
+            if character_dir.is_symlink():
+                raise CharacterStorageError("Character reference directory contains a symbolic link")
+            if not character_dir.is_dir() or not _CHARACTER_ID.fullmatch(character_dir.name):
+                continue
+            for asset_path in character_dir.iterdir():
+                if asset_path.is_symlink():
+                    raise CharacterStorageError("Character reference asset is a symbolic link")
+                if not asset_path.is_file() or not _ASSET_FILENAME.fullmatch(asset_path.name):
+                    continue
+                relative = asset_path.relative_to(project).as_posix()
+                if relative not in referenced_paths:
+                    asset_path.unlink()
+                    removed += 1
+            self._sync_directory(character_dir)
+        if removed:
+            self._sync_directory(references_root)
+        return removed
+
+    @staticmethod
+    def _sync_directory(path: Path) -> None:
+        if os.name == "nt":
+            return
+        try:
+            descriptor = os.open(
+                path, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+            )
+            try:
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
+        except OSError:
+            return
 
     def import_character_reference(self, project_id: str, character_id: str) -> dict[str, Any]:
         """Import an image only through a native picker; never accept a JS-provided path."""
@@ -347,6 +717,7 @@ class DesktopWorkspaceAPI:
     def _load_character_record_locked(
         self, directory: Path, character_id: str
     ) -> dict[str, Any] | None:
+        self._recover_reference_transactions_locked(directory.parent)
         profile_path = directory / f"{character_id}.character.json"
         if profile_path.is_symlink():
             raise CharacterStorageError("Character profile path is unsafe")
