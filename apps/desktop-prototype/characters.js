@@ -217,7 +217,7 @@
         if (!record) throw new Error("Save the character first, then import reference images.");
         if (record.profile.references.length >= 20) throw new Error("A character can have up to 20 reference images.");
         const expectedRevision = record.revision;
-        const imported = await window.STILLABridge.importCharacterReference(
+        const imported = await window.STILLABridge.importCharacterReferenceAndSave(
           activeProjectId, selectedId, expectedRevision,
         );
         if (imported.cancelled) return;
