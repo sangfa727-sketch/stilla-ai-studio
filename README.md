@@ -4,7 +4,7 @@ A local-first AI video creation studio designed to turn an idea into a planned, 
 
 ## Project status
 
-**Foundation stage — not production-ready.** The repository is being initialized with an architecture and safety-first development plan before generation engines are integrated.
+**Prototype and optional Windows desktop bridge stage — not production-ready.** The M7 character workflow now includes identity DNA, versioned Storyboard bindings, bilingual UI, project-local persistence, durable revisions, and transactional reference attachment. Generation, packaging, and physical-device acceptance remain incomplete.
 
 ## Design goals
 
