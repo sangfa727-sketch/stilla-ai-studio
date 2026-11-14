@@ -237,10 +237,13 @@ def test_reference_cleanup_removes_only_unreferenced_assets_and_keeps_history(
     project = api._workspace.root / "projects" / project_id
     orphan = project / "characters" / "references" / "hero_01" / f"{'d' * 32}.png"
     orphan.write_bytes(b"\x89PNG\r\n\x1a\norphan")
+    unrelated = orphan.parent / "notes.png"
+    unrelated.write_bytes(b"user-created file")
     api.list_character_profile_records(project_id)
 
     assert _reference_path(api, project_id, reference).read_bytes() == payload
     assert not orphan.exists()
+    assert unrelated.read_bytes() == b"user-created file"
 
 
 def test_reference_cleanup_is_project_scoped(
