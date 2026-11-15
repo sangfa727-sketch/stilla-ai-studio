@@ -5,6 +5,7 @@ accepted. All project operations are rooted beneath one explicitly selected work
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
@@ -28,6 +29,7 @@ from stilla.characters.revisions import (
 from stilla.characters.schema import CharacterProfile, CharacterProfileError, CharacterReference
 from stilla.characters.storage import CharacterStorageError, load_character, save_character
 from stilla.characters.storyboard import CharacterBoundShotPlan, StoryboardBindingError
+from stilla.media.image_validation import ImageValidationError, verify_image_bytes
 from stilla.media.workspace import (
     ProjectWorkspace,
     WorkspaceConflictError,
@@ -296,6 +298,88 @@ class DesktopWorkspaceAPI:
         return record["profile"]
 
 
+    def load_character_reference_preview(
+        self, project_id: str, character_id: str, asset_id: str
+    ) -> dict[str, Any]:
+        """Return one verified, project-owned reference as a bounded data URL.
+
+        The browser's native image decoder performs the full pixel decode. This method
+        validates ownership, path boundaries, file type, dimensions, and the stored digest.
+        """
+        project = self._require_project(project_id)
+        if not isinstance(character_id, str) or not _CHARACTER_ID.fullmatch(character_id):
+            raise DesktopAPIError("Invalid character identifier")
+        if not isinstance(asset_id, str) or not _TRANSACTION_ID.fullmatch(asset_id):
+            raise DesktopAPIError("Invalid reference asset identifier")
+        directory = project / "characters"
+        if directory.is_symlink() or not directory.is_dir():
+            raise DesktopAPIError("Character storage is unavailable or unsafe")
+
+        try:
+            with self._lock, self._workspace.project_lock(project_id):
+                record = self._load_character_record_locked(directory, character_id)
+                if record is None:
+                    raise DesktopAPIError("Character profile does not exist")
+                profile = CharacterProfile.from_dict(record["profile"])
+                reference = next(
+                    (item for item in profile.references if item.asset_id == asset_id),
+                    None,
+                )
+                if reference is None:
+                    raise DesktopAPIError("Reference image does not belong to this character")
+                relative = Path(reference.relative_path)
+                expected_parent = Path("characters") / "references" / character_id
+                if (
+                    relative.is_absolute()
+                    or relative.parent != expected_parent
+                    or relative.stem != asset_id
+                    or relative.suffix not in {".png", ".jpg", ".webp"}
+                ):
+                    raise DesktopAPIError("Stored reference path is unsafe")
+
+                current = project
+                for part in relative.parts[:-1]:
+                    current = current / part
+                    if current.is_symlink() or not current.is_dir():
+                        raise DesktopAPIError("Stored reference directory is unsafe")
+                    if not current.resolve().is_relative_to(project.resolve()):
+                        raise DesktopAPIError("Stored reference path escapes the project")
+                target = project / relative
+                if target.is_symlink():
+                    raise DesktopAPIError("Stored reference file is unsafe")
+                flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+                with os.fdopen(os.open(target, flags), "rb") as stream:
+                    metadata = os.fstat(stream.fileno())
+                    if not stat.S_ISREG(metadata.st_mode):
+                        raise DesktopAPIError("Stored reference is not a regular file")
+                    if metadata.st_size < 1 or metadata.st_size > _MAX_REFERENCE_BYTES:
+                        raise DesktopAPIError("Stored reference exceeds the supported size limit")
+                    raw = stream.read(_MAX_REFERENCE_BYTES + 1)
+                if len(raw) != metadata.st_size or len(raw) > _MAX_REFERENCE_BYTES:
+                    raise DesktopAPIError("Stored reference size changed while reading")
+                image_info = verify_image_bytes(raw)
+                if image_info["extension"] != relative.suffix:
+                    raise DesktopAPIError("Stored reference format does not match its file name")
+                digest = hashlib.sha256(raw).hexdigest()
+                if not reference.sha256 or digest != reference.sha256:
+                    raise DesktopAPIError("Stored reference checksum does not match its character record")
+        except DesktopAPIError:
+            raise
+        except (CharacterProfileError, CharacterRevisionError, CharacterStorageError,
+                WorkspaceError, ImageValidationError, OSError, ValueError):
+            raise DesktopAPIError("Could not safely load the selected reference image") from None
+
+        return {
+            "asset_id": asset_id,
+            "mime_type": image_info["mime_type"],
+            "data_url": "data:" + image_info["mime_type"] + ";base64," + base64.b64encode(raw).decode("ascii"),
+            "size_bytes": len(raw),
+            "sha256": digest,
+            "width": image_info["width"],
+            "height": image_info["height"],
+        }
+
+
     def import_character_reference_and_save(
         self, project_id: str, character_id: str, expected_revision: int
     ) -> dict[str, Any]:
@@ -346,6 +430,12 @@ class DesktopWorkspaceAPI:
         if detected is None:
             raise DesktopAPIError("Only PNG, JPEG, and WebP image signatures are accepted")
         kind, suffix = detected
+        try:
+            image_info = verify_image_bytes(raw)
+        except ImageValidationError as error:
+            raise DesktopAPIError(str(error)) from None
+        if image_info["extension"] != suffix:
+            raise DesktopAPIError("Image container does not match its detected format")
         asset_id = uuid4().hex
         transaction_id = uuid4().hex
         relative = (

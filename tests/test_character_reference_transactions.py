@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import binascii
 import hashlib
 import json
+import struct
 import sys
+import zlib
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -53,12 +56,30 @@ def _attach_picker(
     api._attach_window(FakeWindow())
 
 
+def _png_bytes(corrupt: bool = False) -> bytes:
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        return (
+            struct.pack(">I", len(data))
+            + kind
+            + data
+            + struct.pack(">I", binascii.crc32(kind + data) & 0xFFFFFFFF)
+        )
+
+    header = struct.pack(">IIBBBBB", 1, 1, 8, 6, 0, 0, 0)
+    pixels = zlib.compress(b"\x00\x20\x80\xc0\xff")
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", header)
+        + chunk(b"IDAT", pixels)
+        + chunk(b"IEND", b"")
+    )
+
+
 def _image(tmp_path: Path, name: str = "reference.png") -> tuple[Path, bytes]:
-    payload = b"\x89PNG\r\n\x1a\n" + b"stilla-reference-test-image"
+    payload = _png_bytes()
     path = tmp_path / name
     path.write_bytes(payload)
     return path, payload
-
 
 def _reference_path(api: DesktopWorkspaceAPI, project_id: str, reference: dict) -> Path:
     return (
@@ -99,6 +120,26 @@ def test_reference_import_attaches_asset_and_revision_atomically(
     assert not list(
         (api._workspace.root / "projects" / project_id / ".stilla-reference-transactions").glob("*.json")
     )
+
+
+def test_corrupt_pixel_stream_is_rejected_before_asset_or_revision_commit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    api = DesktopWorkspaceAPI(tmp_path / "workspace")
+    project_id = _project(api)
+    api.save_character_profile(project_id, _profile(), expected_revision=0)
+    source = tmp_path / "corrupt.png"
+    source.write_bytes(_png_bytes(corrupt=True))
+    _attach_picker(api, source, monkeypatch)
+
+    with pytest.raises(DesktopAPIError, match="corrupt or unsafe to decode"):
+        api.import_character_reference_and_save(project_id, "hero_01", 1)
+
+    project = api._workspace.root / "projects" / project_id
+    assert not (project / "characters" / "references").exists()
+    assert not (project / ".stilla-reference-transactions").exists()
+    assert api.load_character_profile(project_id, "hero_01")["references"] == []
+
 
 
 def test_stale_reference_import_does_not_create_an_asset_or_journal(

@@ -23,7 +23,9 @@
 .button-like{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer;background:var(--panel2);white-space:nowrap}
 .character-reference-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .character-ref-card{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel2);min-width:0}
-.character-ref-card img{display:block;width:100%;height:140px;object-fit:cover;background:var(--bg)}
+.character-ref-card img{display:block;width:100%;height:160px;object-fit:contain;background:var(--bg)}
+.character-ref-placeholder{height:160px;display:grid;place-items:center;padding:12px;text-align:center;color:var(--muted);font-size:12px;line-height:1.5}
+.character-ref-placeholder[role=status]{border-bottom:1px solid var(--line)}
 .character-ref-card>div:not(.character-ref-placeholder){padding:8px 10px}
 .character-ref-card strong,.character-ref-card small{display:block;overflow-wrap:anywhere}
 .character-ref-card button{margin:0 8px 8px}

@@ -20,9 +20,9 @@ jobs:
           python-version: "3.11"
           cache: pip
       - name: Install project and test tools
-        run: python -m pip install -e '.[dev]'
+        run: python -m pip install -e '.[dev,image]'
       - name: Verify Windows file locking and local persistence
-        run: python -m pytest tests/test_media_workspace.py tests/test_character_revisions.py tests/test_desktop_workspace_api.py tests/test_character_reference_transactions.py
+        run: python -m pytest tests/test_media_workspace.py tests/test_character_revisions.py tests/test_desktop_workspace_api.py tests/test_character_reference_transactions.py tests/test_character_reference_preview.py tests/test_image_validation.py
 
   python-checks:
     runs-on: ubuntu-latest
@@ -33,7 +33,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - name: Install project and test tools
-        run: python -m pip install -e '.[dev]'
+        run: python -m pip install -e '.[dev,image]'
       - name: Run tests
         run: python -m pytest
       - name: Check formatting and lint

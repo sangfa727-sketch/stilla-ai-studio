@@ -7,6 +7,9 @@
   let selectedId = null;
   let activeProjectId = null;
   let draftPreviews = {};
+  let previewLoadToken = 0;
+  const referencePreviewCache = new Map();
+  const referencePreviewStates = new Map();
   const storageKey = () => activeProjectId ? KEY + "." + activeProjectId : KEY;
   let query = "";
 
@@ -115,8 +118,19 @@
       '<span class="character-avatar">' + esc(item.profile.name.slice(0, 1).toUpperCase() || "?") + '</span><span class="character-library-meta"><strong>' + esc(item.profile.name) + '</strong><small>Revision ' + esc(item.revision) + ' · ' + item.profile.references.length + ' reference(s)</small></span><span class="pill">' + (item.profile.references.length ? "Refs saved" : "No refs") + '</span></button>'
     ).join("") : '<div class="character-empty">No characters yet. Create an original character to begin your library.</div>';
     const refs = current ? current.profile.references.map((ref) => {
-      const preview = current.reference_previews && current.reference_previews[ref.asset_id];
-      return '<div class="character-ref-card">' + (preview ? '<img src="' + preview + '" alt="Reference image ' + esc(ref.role) + '">' : '<div class="character-ref-placeholder">Reference preview is not yet available in this desktop view.</div>') +
+      const cacheKey = String(activeProjectId || "browser") + ":" + current.profile.id + ":" + ref.asset_id;
+      const preview = (current.reference_previews && current.reference_previews[ref.asset_id]) ||
+        referencePreviewCache.get(cacheKey);
+      const previewState = referencePreviewStates.get(cacheKey);
+      const placeholder = window.STILLABridge?.isDesktop()
+        ? (previewState === "failed" ? "Preview unavailable" : "Loading reference preview…")
+        : "Reference preview is not available";
+      const imageMarkup = preview
+        ? '<img data-reference-image="' + esc(ref.asset_id) + '" src="' + esc(preview) +
+          '" alt="Reference image ' + esc(ref.role) + '" loading="lazy" decoding="async">'
+        : '<div class="character-ref-placeholder" data-reference-preview="' + esc(ref.asset_id) +
+          '" role="status" aria-live="polite">' + placeholder + '</div>';
+      return '<div class="character-ref-card">' + imageMarkup +
         '<div><strong>' + esc(ref.role) + '</strong><small>' + esc(ref.asset_id) + '</small></div><button type="button" class="quiet" data-remove-ref="' + esc(ref.asset_id) + '" aria-label="Remove reference">Remove</button></div>';
     }).join("") : "";
     return '<div class="page-head"><div><div class="eyebrow">STILLA STUDIO / CHARACTER WORKSPACE</div><h1>Character Creator</h1><p>Build original characters once, preserve their visual DNA and reuse them in future stories.</p></div><div class="head-actions"><button id="newCharacter">＋ New character</button><button id="importCharacterBundle">Import bundle</button><input id="characterBundleInput" type="file" accept="application/json,.json" hidden><button id="exportCharacter" ' + (current ? "" : "disabled") + '>Export bundle</button><button id="deleteCharacter" class="quiet" ' + (current ? "" : "disabled") + '>Delete</button></div></div>' +
@@ -177,11 +191,98 @@
     anchor.href = url; anchor.download = record.profile.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".stilla-character.json";
     anchor.click(); URL.revokeObjectURL(url);
   };
+  const decodeReferenceImage = async (dataUrl) => {
+    const match = typeof dataUrl === "string" &&
+      /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(dataUrl);
+    if (!match || dataUrl.length > MAX_REFERENCE_BYTES * 1.5 + 128) {
+      throw new Error("Reference image data is invalid or too large to preview.");
+    }
+    const image = new Image();
+    image.decoding = "async";
+    if (typeof image.decode === "function") {
+      image.src = dataUrl;
+      await image.decode();
+    } else {
+      await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = () => reject(new Error("Reference image could not be decoded."));
+        image.src = dataUrl;
+      });
+    }
+    const width = Number(image.naturalWidth || image.width);
+    const height = Number(image.naturalHeight || image.height);
+    if (!Number.isInteger(width) || !Number.isInteger(height) ||
+        width < 1 || height < 1 || width > 10000 || height > 10000 ||
+        width * height > 40000000) {
+      throw new Error("Reference image dimensions exceed the supported safety limits.");
+    }
+    return { width, height };
+  };
+  const rememberReferencePreview = (key, dataUrl) => {
+    if (referencePreviewCache.has(key)) referencePreviewCache.delete(key);
+    referencePreviewCache.set(key, dataUrl);
+    while (referencePreviewCache.size > 2) {
+      referencePreviewCache.delete(referencePreviewCache.keys().next().value);
+    }
+  };
+  const refresh = () => {
+    const root = document.getElementById("mainContent");
+    if (!root || !root.querySelector("#newCharacter")) return;
+    root.innerHTML = render();
+    wire();
+    window.STILLAI18N?.refresh();
+  };
+  const hydrateSelectedReferencePreviews = async () => {
+    if (!window.STILLABridge?.isDesktop() || !activeProjectId || !selectedId) return;
+    const record = selectedRecord();
+    if (!record) return;
+    const projectId = activeProjectId;
+    const characterId = selectedId;
+    const token = ++previewLoadToken;
+    for (const ref of record.profile.references) {
+      const key = projectId + ":" + characterId + ":" + ref.asset_id;
+      if (referencePreviewCache.has(key) || referencePreviewStates.get(key) === "failed") continue;
+      referencePreviewStates.set(key, "loading");
+      const findPlaceholder = () => Array.from(document.querySelectorAll("[data-reference-preview]"))
+        .find((node) => node.dataset.referencePreview === ref.asset_id);
+      const placeholder = findPlaceholder();
+      if (placeholder) placeholder.textContent = "Loading reference preview…";
+      try {
+        const preview = await window.STILLABridge.loadCharacterReferencePreview(
+          projectId, characterId, ref.asset_id,
+        );
+        const dimensions = await decodeReferenceImage(preview.data_url);
+        if (dimensions.width !== preview.width || dimensions.height !== preview.height) {
+          throw new Error("Reference image dimensions do not match the stored metadata.");
+        }
+        if (token !== previewLoadToken || activeProjectId !== projectId || selectedId !== characterId) return;
+        rememberReferencePreview(key, preview.data_url);
+        referencePreviewStates.set(key, "ready");
+        const currentPlaceholder = findPlaceholder();
+        if (currentPlaceholder) {
+          const image = document.createElement("img");
+          image.src = preview.data_url;
+          image.alt = "Reference image " + ref.role;
+          image.loading = "lazy";
+          image.decoding = "async";
+          currentPlaceholder.replaceWith(image);
+        }
+      } catch (error) {
+        if (token !== previewLoadToken || activeProjectId !== projectId || selectedId !== characterId) return;
+        referencePreviewStates.set(key, "failed");
+        const currentPlaceholder = findPlaceholder();
+        if (currentPlaceholder) {
+          currentPlaceholder.textContent = "Preview unavailable";
+          currentPlaceholder.title = String(error?.message || "Reference image could not be loaded.");
+        }
+      }
+    }
+  };
   const wire = () => {
     const $ = (id) => document.getElementById(id);
-    $("newCharacter")?.addEventListener("click", () => { selectedId = null; draftPreviews = {}; render(); });
-    $("characterSearch")?.addEventListener("input", (event) => { query = event.target.value.toLowerCase(); const pos = event.target.selectionStart; render(); const input = $("characterSearch"); input.focus(); input.setSelectionRange(pos, pos); });
-    document.querySelectorAll("[data-character-id]").forEach((button) => button.addEventListener("click", () => { selectedId = button.dataset.characterId; draftPreviews = {}; render(); }));
+    $("newCharacter")?.addEventListener("click", () => { selectedId = null; draftPreviews = {}; refresh(); });
+    $("characterSearch")?.addEventListener("input", (event) => { query = event.target.value.toLowerCase(); const pos = event.target.selectionStart; refresh(); const input = $("characterSearch"); input.focus(); input.setSelectionRange(pos, pos); });
+    document.querySelectorAll("[data-character-id]").forEach((button) => button.addEventListener("click", () => { selectedId = button.dataset.characterId; draftPreviews = {}; refresh(); }));
     $("characterForm")?.addEventListener("submit", async (event) => {
       event.preventDefault();
       try {
@@ -203,9 +304,9 @@
         const next = items.filter((item) => item.profile.id !== profile.id);
         next.unshift(record);
         writeLibrary(next);
-        selectedId = profile.id; draftPreviews = {}; render();
+        selectedId = profile.id; draftPreviews = {}; refresh();
         $("characterFormStatus")?.replaceChildren(document.createTextNode("Saved as revision " + record.revision + "."));
-        document.getElementById("saveState").textContent = "Character saved · browser";
+        document.getElementById("saveState").textContent = desktop ? "Character saved · desktop" : "Character saved · browser";
       } catch (error) {
         const status = $("characterFormStatus");
         if (status) { status.textContent = error.message; status.classList.add("error"); }
@@ -229,7 +330,7 @@
         current.updated_at = imported.updated_at;
         current.mirror_recovery_pending = imported.mirror_recovery_pending;
         writeLibrary(items);
-        render();
+        refresh();
       } catch (error) { alert("Reference import failed: " + error.message); }
     });
     $("characterReferenceInput")?.addEventListener("change", async (event) => {
@@ -246,6 +347,7 @@
           const dataUrl = await new Promise((resolve, reject) => {
             const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error("Could not read the selected image.")); reader.readAsDataURL(file);
           });
+          await decodeReferenceImage(dataUrl);
           const assetId = freshId();
           const extension = file.type === "image/jpeg" ? "jpg" : file.type.split("/")[1];
           current.profile.references.push({ asset_id: assetId, relative_path: "references/" + assetId + "." + extension, role: "reference", sha256: "" });
@@ -254,7 +356,7 @@
         }
         current.revision += 1; current.updated_at = new Date().toISOString();
         writeLibrary([current, ...items.filter((item) => item.profile.id !== selectedId)]);
-        render();
+        refresh();
       } catch (error) {
         alert(error.message);
       } finally {
@@ -268,6 +370,9 @@
       const expectedRevision = record.revision;
       record.profile.references = record.profile.references.filter((ref) => ref.asset_id !== id);
       delete record.reference_previews[id];
+      const previewKey = String(activeProjectId || "browser") + ":" + selectedId + ":" + id;
+      referencePreviewCache.delete(previewKey);
+      referencePreviewStates.delete(previewKey);
       try {
         if (window.STILLABridge?.isDesktop()) {
           const saved = await window.STILLABridge.saveCharacter(activeProjectId, record.profile, expectedRevision);
@@ -278,7 +383,7 @@
           record.revision += 1;
           record.updated_at = new Date().toISOString();
         }
-        writeLibrary(items); render();
+        writeLibrary(items); refresh();
       } catch (error) { alert("Could not update reference metadata: " + error.message); }
     }));
     $("importCharacterBundle")?.addEventListener("click", () => $("characterBundleInput")?.click());
@@ -314,6 +419,7 @@
           return { asset_id: assetId, relative_path: "references/" + assetId + "." + extension,
             role: typeof ref.role === "string" ? ref.role.slice(0, 100) : "reference", sha256: "" };
         });
+        for (const dataUrl of Object.values(previews)) await decodeReferenceImage(dataUrl);
         profile.id = freshId();
         profile.references = refs;
         const desktop = window.STILLABridge?.isDesktop();
@@ -325,7 +431,7 @@
           record.mirror_recovery_pending = saved.mirror_recovery_pending;
         }
         writeLibrary([record, ...items]);
-        selectedId = profile.id; draftPreviews = {}; render();
+        selectedId = profile.id; draftPreviews = {}; refresh();
       } catch (error) {
         alert("Could not import character bundle: " + error.message);
       } finally {
@@ -340,7 +446,7 @@
       try {
         if (window.STILLABridge?.isDesktop()) await window.STILLABridge.deleteCharacter(activeProjectId, selectedId);
         writeLibrary(readLibrary().filter((item) => item.profile.id !== selectedId));
-        selectedId = null; draftPreviews = {}; render();
+        selectedId = null; draftPreviews = {}; refresh();
       } catch (error) { alert("Could not delete character: " + error.message); }
     });
     $("copyCharacterPrompt")?.addEventListener("click", async () => {
@@ -353,8 +459,10 @@
       try { await navigator.clipboard.writeText(brief); alert("Identity brief copied."); }
       catch { alert(brief); }
     });
+    void hydrateSelectedReferencePreviews();
   };
   const loadProject = async (projectId) => {
+    previewLoadToken += 1;
     activeProjectId = projectId || null;
     selectedId = null;
     draftPreviews = {};
@@ -375,5 +483,8 @@
       localStorage.setItem(KEY + ".project-migrated", "1");
     }
   };
-  window.STILLACharacterUI = { render, wire, loadProject, getProfiles: () => readLibrary() };
+  window.STILLACharacterUI = {
+    render, wire, loadProject, refresh, decodeReferenceImage,
+    getProfiles: () => readLibrary()
+  };
 })();

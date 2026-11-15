@@ -81,7 +81,7 @@ The HTML prototype can still be opened directly in a browser. To launch the same
 inside the optional PyWebView desktop host:
 
 1. Install Python 3.11 or newer.
-2. Install the desktop extra: python -m pip install -e ".[desktop,dev]".
+2. Install the desktop extra: python -m pip install -e ".[desktop,dev,image]".
 3. Launch: python -m stilla.desktop.app.
 
 The optional desktop host exposes a narrow local bridge for workspace selection,
@@ -95,10 +95,15 @@ immutable character revision. The legacy character profile and bundle formats re
 unchanged.
 
 The revision ledger is authoritative for desktop character history. Browser-only mode
-continues to use browser-local storage and does not gain project-folder durability.
-Desktop reference-image previews, full image decoding, ComfyUI reference conditioning,
-Windows installer packaging, and phone-native installation are not included yet.
-Windows native dialogs, msvcrt locking, Burmese font rendering, restart recovery, and
-local GPU/model smoke tests still require acceptance on the user's PC. The project is
+continues to use browser-local storage and does not gain project-folder durability. M7i adds
+a project-scoped preview bridge that verifies reference ownership, safe paths, SHA-256,
+container dimensions, and full pixel decoding through the optional Pillow image extra;
+the embedded browser also decodes each image before displaying it. Preview data is held
+in a small in-memory cache and is not copied into browser storage. This is not a malware
+scan or a substitute for physical-device acceptance.
+ComfyUI reference conditioning, Windows installer packaging, and phone-native installation
+are not included yet. Windows native dialogs, msvcrt locking, Burmese font rendering,
+restart recovery, responsive device behavior, and local GPU/model smoke tests still require
+acceptance on the user's PC and phone. The project is
 not production-ready until those environment-specific checks and the remaining
 workflow gates are completed.
