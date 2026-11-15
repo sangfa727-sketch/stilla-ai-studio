@@ -9,7 +9,6 @@ import io
 import warnings
 from typing import Any
 
-
 MAX_IMAGE_SIDE = 10_000
 MAX_IMAGE_PIXELS = 40_000_000
 _PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
