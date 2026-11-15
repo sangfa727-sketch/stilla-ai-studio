@@ -66,7 +66,7 @@ def _png_bytes(corrupt: bool = False) -> bytes:
         )
 
     header = struct.pack(">IIBBBBB", 1, 1, 8, 6, 0, 0, 0)
-    pixels = zlib.compress(b"\x00\x20\x80\xc0\xff")
+    pixels = b"not-zlib" if corrupt else zlib.compress(b"\x00\x20\x80\xc0\xff")
     return (
         b"\x89PNG\r\n\x1a\n"
         + chunk(b"IHDR", header)
