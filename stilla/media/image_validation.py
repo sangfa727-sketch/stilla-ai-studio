@@ -5,8 +5,8 @@ This module validates container structure and dimensions before large data is ha
 """
 from __future__ import annotations
 
+import io
 import warnings
-from io import BytesIO
 from typing import Any
 
 
@@ -125,11 +125,11 @@ def verify_image_bytes(raw: bytes) -> dict[str, Any]:
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
-            with Image.open(BytesIO(raw)) as image:
+            with Image.open(io.BytesIO(raw)) as image:
                 if image.format != expected_format or image.size != (info["width"], info["height"]):
                     raise ImageValidationError("Decoded image metadata does not match its container")
                 image.verify()
-            with Image.open(BytesIO(raw)) as image:
+            with Image.open(io.BytesIO(raw)) as image:
                 image.load()
                 if image.format != expected_format or image.size != (info["width"], info["height"]):
                     raise ImageValidationError("Decoded image metadata changed during validation")
