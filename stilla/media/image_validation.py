@@ -5,8 +5,8 @@ This module validates container structure and dimensions before large data is ha
 """
 from __future__ import annotations
 
-from io import BytesIO
 import warnings
+from io import BytesIO
 from typing import Any
 
 
