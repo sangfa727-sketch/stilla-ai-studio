@@ -3,8 +3,10 @@ from __future__ import annotations
 import binascii
 import struct
 import zlib
+from io import BytesIO
 
 import pytest
+from PIL import Image
 
 from stilla.media.image_validation import (
     MAX_IMAGE_PIXELS,
@@ -97,6 +99,18 @@ def test_fully_decodes_valid_png_pixels() -> None:
     assert result["mime_type"] == "image/png"
     assert result["width"] == 1
     assert result["height"] == 1
+
+
+@pytest.mark.parametrize(("image_format", "kind"), [("JPEG", "jpeg"), ("WEBP", "webp")])
+def test_fully_decodes_real_jpeg_and_webp_files(image_format: str, kind: str) -> None:
+    buffer = BytesIO()
+    Image.new("RGB", (3, 2), (20, 40, 60)).save(buffer, format=image_format)
+
+    result = verify_image_bytes(buffer.getvalue())
+
+    assert result["kind"] == kind
+    assert result["width"] == 3
+    assert result["height"] == 2
 
 
 def test_rejects_corrupt_png_pixel_stream_even_with_valid_header() -> None:
