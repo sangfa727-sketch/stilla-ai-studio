@@ -109,6 +109,6 @@ def test_rejects_corrupt_png_pixel_stream_even_with_valid_header() -> None:
         )
 
     header = struct.pack(">IIBBBBB", 1, 1, 8, 6, 0, 0, 0)
-    payload = b"\\x89PNG\\r\\n\\x1a\\n" + chunk(b"IHDR", header) + chunk(b"IDAT", b"not-zlib") + chunk(b"IEND", b"")
+    payload = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", b"not-zlib") + chunk(b"IEND", b"")
     with pytest.raises(ImageValidationError, match="corrupt or unsafe"):
         verify_image_bytes(payload)
