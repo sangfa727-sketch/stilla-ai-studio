@@ -8,7 +8,12 @@ from __future__ import annotations
 import json
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
+from urllib.request import (
+    build_opener,
+    HTTPRedirectHandler,
+    ProxyHandler,
+    Request,
+)
 
 
 DEFAULT_QWEN_BASE_URL = "http://127.0.0.1:1234/v1"
@@ -104,7 +109,7 @@ def _get_json(url: str, *, service: str, timeout_seconds: float = 3.0) -> dict:
     return payload
 
 
-def test_qwen_connection(base_url: str, selected_model: str) -> dict[str, object]:
+def discover_qwen_models(base_url: str, selected_model: str) -> dict[str, object]:
     """Discover OpenAI-compatible model IDs; does not send prompts or run inference."""
     settings = validate_runtime_settings(
         qwen_base_url=base_url,
@@ -132,7 +137,7 @@ def test_qwen_connection(base_url: str, selected_model: str) -> dict[str, object
     }
 
 
-def test_comfyui_connection(base_url: str) -> dict[str, object]:
+def check_comfyui_status(base_url: str) -> dict[str, object]:
     """Check ComfyUI's local system_stats endpoint without submitting a workflow."""
     endpoint = _normalize_loopback_url(base_url, service="ComfyUI") + "/system_stats"
     payload = _get_json(endpoint, service="ComfyUI")
