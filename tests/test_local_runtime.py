@@ -138,6 +138,13 @@ def test_local_runtime_does_not_follow_redirects() -> None:
         discover_qwen_models(root + "/v1", "qwen")
 
 
+def test_qwen_rejects_integer_overflow_in_json_response() -> None:
+    payload = b'{"data": [], "untrusted": ' + b"9" * 5000 + b"}"
+    route = {"/v1/models": (200, payload)}
+    with local_server(route) as root, pytest.raises(LocalRuntimeError, match="invalid JSON"):
+        discover_qwen_models(root + "/v1", "qwen")
+
+
 def test_local_runtime_bounds_response_size() -> None:
     route = {"/v1/models": (200, b"x" * (256 * 1024 + 1))}
     with local_server(route) as root, pytest.raises(LocalRuntimeError, match="256 KB"):
