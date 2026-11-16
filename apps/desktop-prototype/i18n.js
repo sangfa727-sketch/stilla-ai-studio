@@ -68,7 +68,7 @@
       "Open STILLA using the Windows desktop app to test local runtimes.":"Local Runtime များ စမ်းသပ်ရန် STILLA Windows Desktop App ကို အသုံးပြုပါ။",
       "The native desktop bridge is not ready. Restart the desktop app and try again.":"Desktop Bridge အသင့်မဖြစ်သေးပါ။ Desktop App ကို ပြန်ဖွင့်ပြီး ထပ်စမ်းပါ။",
       "Browser preview cannot access local model services. Use the Windows desktop app for a safe loopback connection test.":"Browser Preview မှ Local Model Service ကို မချိတ်ဆက်နိုင်ပါ။ လုံခြုံသော Local ချိတ်ဆက်မှုစမ်းသပ်ရန် Windows Desktop App ကို အသုံးပြုပါ။",
-      "ComfyUI health checks are available only in the Windows desktop app.":"ComfyUI စစ်ဆေးမှုကို Windows Desktop App တွင်သာ လုပ်ဆောင်နိုင်ပါသည်။";
+      "ComfyUI health checks are available only in the Windows desktop app.":"ComfyUI စစ်ဆေးမှုကို Windows Desktop App တွင်သာ လုပ်ဆောင်နိုင်ပါသည်။",
  
       "Storage & privacy":"Storage နှင့် ကိုယ်ရေးလုံခြုံမှု","Project storage folder":"ပရောဂျက်သိမ်းဆည်းမည့် ဖိုင်တွဲ",
       "Performance & diagnostics":"စွမ်းဆောင်ရည်နှင့် စစ်ဆေးချက်များ","Hardware capability check":"Hardware စွမ်းဆောင်ရည်စစ်ဆေးရန်",
