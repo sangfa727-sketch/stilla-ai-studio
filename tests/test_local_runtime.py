@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import json
 import threading
+from collections.abc import Iterator
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Iterator
 
 import pytest
 
@@ -13,8 +13,8 @@ from stilla.ai.local_runtime import (
     DEFAULT_QWEN_BASE_URL,
     DEFAULT_QWEN_MODEL,
     LocalRuntimeError,
-    test_comfyui_connection as check_comfyui_connection,
-    test_qwen_connection as check_qwen_connection,
+    check_comfyui_status,
+    discover_qwen_models,
     validate_runtime_settings,
 )
 
@@ -86,7 +86,7 @@ def test_qwen_discovers_model_ids_and_reports_selected_model() -> None:
         )
     }
     with local_server(routes) as root:
-        result = check_qwen_connection(root + "/v1", "qwen-local")
+        result = discover_qwen_models(root + "/v1", "qwen-local")
     assert result == {
         "connected": True,
         "models": ["qwen-local", "other"],
@@ -114,7 +114,7 @@ def test_comfyui_checks_system_stats_without_submitting_workflow() -> None:
         "devices": [{"name": "GPU"}],
     }
     with local_server({"/system_stats": (200, payload)}) as root:
-        result = check_comfyui_connection(root)
+        result = check_comfyui_status(root)
     assert result == {"connected": True, "version": "0.3.26", "device_count": 1}
 
 
