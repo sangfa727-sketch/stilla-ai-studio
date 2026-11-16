@@ -101,7 +101,7 @@ def _get_json(url: str, *, service: str, timeout_seconds: float = 3.0) -> dict:
         raise LocalRuntimeError(f"{service} response exceeded the 256 KB safety limit")
     try:
         payload = json.loads(raw.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):
+    except (UnicodeDecodeError, ValueError, RecursionError):
         raise LocalRuntimeError(f"{service} returned invalid JSON") from None
     if not isinstance(payload, dict):
         raise LocalRuntimeError(f"{service} returned an unsupported response")
