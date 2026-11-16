@@ -101,9 +101,17 @@ container dimensions, and full pixel decoding through the optional Pillow image 
 the embedded browser also decodes each image before displaying it. Preview data is held
 in a small in-memory cache and is not copied into browser storage. This is not a malware
 scan or a substitute for physical-device acceptance.
+M7j adds desktop-only, loopback-restricted health checks for the existing Bionic
+OpenAI-compatible Qwen endpoint (GET /v1/models) and ComfyUI (GET /system_stats), plus
+workspace-local persistence for endpoint/model preferences. These checks do not send
+prompts, run inference, submit ComfyUI workflows, generate images, or load GGUF files
+directly. The Qwen model remains managed by the existing Bionic runtime. The defaults
+are `http://127.0.0.1:1234/v1` and `http://127.0.0.1:8188`; adjust them only if the
+local services use different ports. Browser-only preview cannot test loopback services.
+
 ComfyUI reference conditioning, Windows installer packaging, and phone-native installation
 are not included yet. Windows native dialogs, msvcrt locking, Burmese font rendering,
-restart recovery, responsive device behavior, and local GPU/model smoke tests still require
-acceptance on the user's PC and phone. The project is
-not production-ready until those environment-specific checks and the remaining
-workflow gates are completed.
+restart recovery, responsive device behavior, real Qwen inference, ComfyUI workflow
+submission, and local GPU/model smoke tests still require acceptance on the user's PC
+and phone. The project is not production-ready until those environment-specific checks
+and the remaining workflow gates are completed.

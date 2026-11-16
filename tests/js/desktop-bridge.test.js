@@ -11,6 +11,59 @@ const source = fs.readFileSync(
   "utf8",
 );
 
+test("desktop bridge exposes local runtime settings and metadata-only health checks", async () => {
+  const calls = [];
+  const api = new Proxy({}, {
+    get(_target, method) {
+      return async (...args) => {
+        calls.push([String(method), ...args]);
+        if (method === "get_local_runtime_settings") {
+          return {
+            schema_version: 1,
+            qwen_base_url: "http://127.0.0.1:1234/v1",
+            qwen_model: "qwen-local",
+            comfyui_base_url: "http://127.0.0.1:8188",
+          };
+        }
+        if (method === "check_qwen_connection") {
+          return { connected: true, models: ["qwen-local"], selected_model_available: true };
+        }
+        if (method === "check_comfyui_connection") {
+          return { connected: true, device_count: 1 };
+        }
+        return { saved: true };
+      };
+    },
+  });
+  const window = {
+    location: { search: "?runtime=desktop" },
+    pywebview: { api },
+    addEventListener() {},
+  };
+  vm.runInNewContext(source, { window, URLSearchParams });
+  const bridge = window.STILLABridge;
+
+  const settings = await bridge.getLocalRuntimeSettings();
+  const saved = await bridge.saveLocalRuntimeSettings(
+    "http://127.0.0.1:1234/v1", "qwen-local", "http://127.0.0.1:8188",
+  );
+  const qwen = await bridge.checkQwenConnection(
+    "http://127.0.0.1:1234/v1", "qwen-local",
+  );
+  const comfy = await bridge.checkComfyUIConnection("http://127.0.0.1:8188");
+
+  assert.equal(settings.qwen_model, "qwen-local");
+  assert.equal(saved.saved, true);
+  assert.equal(qwen.selected_model_available, true);
+  assert.equal(comfy.device_count, 1);
+  assert.deepEqual(calls, [
+    ["get_local_runtime_settings"],
+    ["save_local_runtime_settings", "http://127.0.0.1:1234/v1", "qwen-local", "http://127.0.0.1:8188"],
+    ["check_qwen_connection", "http://127.0.0.1:1234/v1", "qwen-local"],
+    ["check_comfyui_connection", "http://127.0.0.1:8188"],
+  ]);
+});
+
 test("desktop bridge forwards durable revision and document CAS tokens", async () => {
   const calls = [];
   const api = new Proxy({}, {
