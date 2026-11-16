@@ -22,8 +22,8 @@ from stilla.ai.local_runtime import (
     DEFAULT_QWEN_BASE_URL,
     DEFAULT_QWEN_MODEL,
     LocalRuntimeError,
-    test_comfyui_connection as check_comfyui_connection,
-    test_qwen_connection as check_qwen_connection,
+    check_comfyui_status,
+    discover_qwen_models,
     validate_runtime_settings,
 )
 from stilla.characters.revisions import (
@@ -143,14 +143,14 @@ class DesktopWorkspaceAPI:
     def check_qwen_connection(self, base_url: str, selected_model: str) -> dict[str, object]:
         """Discover local OpenAI-compatible model IDs; no prompt or inference is sent."""
         try:
-            return check_qwen_connection(base_url, selected_model)
+            return discover_qwen_models(base_url, selected_model)
         except LocalRuntimeError as exc:
             raise DesktopAPIError(str(exc)) from None
 
     def check_comfyui_connection(self, base_url: str) -> dict[str, object]:
         """Check ComfyUI health without submitting or changing any workflow."""
         try:
-            return check_comfyui_connection(base_url)
+            return check_comfyui_status(base_url)
         except LocalRuntimeError as exc:
             raise DesktopAPIError(str(exc)) from None
 
