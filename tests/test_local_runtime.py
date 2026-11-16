@@ -91,7 +91,7 @@ def test_qwen_discovers_model_ids_and_reports_selected_model() -> None:
 
 def test_qwen_connection_distinguishes_unavailable_selected_model() -> None:
     with local_server({"/v1/models": (200, {"data": [{"id": "qwen-local"}]})}) as root:
-        result = test_qwen_connection(root + "/v1", "missing-model")
+        result = check_qwen_connection(root + "/v1", "missing-model")
     assert result["connected"] is True
     assert result["selected_model_available"] is False
 
@@ -99,7 +99,7 @@ def test_qwen_connection_distinguishes_unavailable_selected_model() -> None:
 def test_qwen_rejects_invalid_models_payload() -> None:
     with local_server({"/v1/models": (200, {"models": [{"name": "qwen"}]})}) as root:
         with pytest.raises(LocalRuntimeError, match="data list"):
-            test_qwen_connection(root + "/v1", "qwen")
+            check_qwen_connection(root + "/v1", "qwen")
 
 
 def test_comfyui_checks_system_stats_without_submitting_workflow() -> None:
@@ -113,16 +113,16 @@ def test_comfyui_checks_system_stats_without_submitting_workflow() -> None:
 def test_comfyui_rejects_unexpected_status_payload() -> None:
     with local_server({"/system_stats": (200, {"status": "ok"})}) as root:
         with pytest.raises(LocalRuntimeError, match="unsupported structure"):
-            test_comfyui_connection(root)
+            check_comfyui_connection(root)
 
 
 def test_local_runtime_does_not_follow_redirects() -> None:
     with local_server({"/v1/models": (302, {"location": "https://example.com"})}) as root:
         with pytest.raises(LocalRuntimeError, match="HTTP 302"):
-            test_qwen_connection(root + "/v1", "qwen")
+            check_qwen_connection(root + "/v1", "qwen")
 
 
 def test_local_runtime_bounds_response_size() -> None:
     with local_server({"/v1/models": (200, b"x" * (256 * 1024 + 1))}) as root:
         with pytest.raises(LocalRuntimeError, match="256 KB"):
-            test_qwen_connection(root + "/v1", "qwen")
+            check_qwen_connection(root + "/v1", "qwen")
