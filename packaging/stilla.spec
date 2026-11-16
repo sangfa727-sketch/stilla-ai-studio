@@ -7,7 +7,8 @@ from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_all
 
-ROOT = Path(SPECPATH).resolve().parent.parent
+# SPECPATH is the directory containing this spec file (packaging/).
+ROOT = Path(SPECPATH).resolve().parent
 PROTOTYPE = ROOT / "apps" / "desktop-prototype"
 
 if not (PROTOTYPE / "index.html").is_file():
