@@ -191,10 +191,12 @@
     anchor.href = url; anchor.download = record.profile.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".stilla-character.json";
     anchor.click(); URL.revokeObjectURL(url);
   };
-  const decodeReferenceImage = async (dataUrl) => {
+  const MAX_DESKTOP_REFERENCE_BYTES = 10 * 1024 * 1024;
+  const decodeReferenceImage = async (dataUrl, maxBytes = MAX_REFERENCE_BYTES) => {
     const match = typeof dataUrl === "string" &&
       /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(dataUrl);
-    if (!match || dataUrl.length > MAX_REFERENCE_BYTES * 1.5 + 128) {
+    if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 ||
+        !match || dataUrl.length > Math.ceil(maxBytes / 3) * 4 + 64) {
       throw new Error("Reference image data is invalid or too large to preview.");
     }
     const image = new Image();
@@ -251,7 +253,7 @@
         const preview = await window.STILLABridge.loadCharacterReferencePreview(
           projectId, characterId, ref.asset_id,
         );
-        const dimensions = await decodeReferenceImage(preview.data_url);
+        const dimensions = await decodeReferenceImage(preview.data_url, MAX_DESKTOP_REFERENCE_BYTES);
         if (dimensions.width !== preview.width || dimensions.height !== preview.height) {
           throw new Error("Reference image dimensions do not match the stored metadata.");
         }
