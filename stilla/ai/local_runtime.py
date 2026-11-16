@@ -61,7 +61,11 @@ def validate_runtime_settings(
     comfyui_base_url: str = DEFAULT_COMFYUI_BASE_URL,
 ) -> dict[str, object]:
     """Validate and normalize non-secret local endpoint/model preferences."""
-    if not isinstance(qwen_model, str) or not qwen_model.strip() or len(qwen_model) > 200:
+    if (
+        not isinstance(qwen_model, str)
+        or not qwen_model.strip()
+        or len(qwen_model) > 200
+    ):
         raise LocalRuntimeError("Qwen model ID must contain 1 to 200 characters")
     return {
         "schema_version": 1,
@@ -72,7 +76,11 @@ def validate_runtime_settings(
 
 
 def _get_json(url: str, *, service: str, timeout_seconds: float = 3.0) -> dict:
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "STILLA-AI-Studio"}, method="GET")
+    request = Request(
+        url,
+        headers={"Accept": "application/json", "User-Agent": "STILLA-AI-Studio"},
+        method="GET",
+    )
     opener = build_opener(_NoRedirect)
     try:
         with opener.open(request, timeout=timeout_seconds) as response:
