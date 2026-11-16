@@ -22,7 +22,7 @@
   <span class="muted">/</span><span class="project-name" id="projectLabel">Untitled film</span>
   <span class="pill" id="saveState">Saved locally · prototype</span>
   <div class="top-spacer"></div>
-  <span class="status" title="This is a non-connected UX prototype"><span class="dot"></span> Prototype · no model connected</span>
+  <span class="status" id="runtimeTopStatus" title="Local runtime connection status"><span class="dot"></span><span id="runtimeTopStatusText">Local runtimes · not tested</span></span>
   <button class="quiet" id="queueToggle" aria-expanded="false" aria-controls="queuePanel">Queue <span id="queueCount">2</span></button>
   <label class="small muted" for="languageQuick" style="position:absolute;left:-9999px">Language</label><select id="languageQuick" aria-label="Language" style="width:auto;min-width:76px;padding:7px 8px"><option value="en">EN</option><option value="my">မြန်မာ</option></select>
   <button class="quiet" id="themeToggle" aria-label="Switch theme">☼</button>
@@ -92,8 +92,8 @@ function assetsPage(){return head("assets",'<button class="quiet" id="filterAsse
 '<section class="card"><div class="card-head"><h2>Project library</h2><div class="field" style="margin:0;min-width:180px"><label class="hidden" for="assetSearch">Search assets</label><input id="assetSearch" placeholder="Search assets…" aria-label="Search assets"></div></div><div id="assetList"><div class="list-item" data-search="morning wide imported video"><div class="tile-icon">▧</div><div class="meta"><strong>morning-wide.mp4</strong><span class="small muted">Imported video · Untitled film · 00:08</span></div><span class="pill">Imported</span><button data-page="edit">Use in edit</button></div><div class="list-item" data-search="bakery close generated image"><div class="tile-icon">✧</div><div class="meta"><strong>bakery-close — sample</strong><span class="small muted">Illustrative generation record · prompt unavailable</span></div><span class="pill warn">Demo</span><button data-page="generate">View job</button></div><div class="list-item" data-search="captions srt subtitles imported"><div class="tile-icon">T</div><div class="meta"><strong>captions.srt</strong><span class="small muted">Subtitle file · provenance sample</span></div><span class="pill">Imported</span><button data-page="edit">Use in edit</button></div><div class="list-item" data-search="storyboard frames failed job"><div class="tile-icon">◌</div><div class="meta"><strong>Storyboard frames</strong><span class="small muted">Job history · runtime unavailable</span></div><span class="pill warn">Paused</span><button data-page="generate">Retry flow</button></div></div><p class="footer-note">Real provenance should preserve source, model/runtime version, prompt/settings when available, and job outcome without inventing missing metadata.</p></section>'}
 function exportPage(){return head("export",'<button class="quiet" id="validateExport">Validate settings</button><button class="primary" id="startExport">Queue export</button>')+
 '<div class="grid" style="grid-template-columns:minmax(260px,1.2fr) minmax(240px,.8fr)"><section class="card"><h2>Output settings</h2><div class="field"><label for="exportName">File name</label><input id="exportName" value="untitled-film-final"></div><div class="field"><label for="exportFormat">Container / codec preset</label><select id="exportFormat"><option>MP4 · H.264 · compatible</option><option>WebM · VP9 (engine support required)</option><option>ProRes (engine support required)</option></select></div><div class="grid cols-2"><div class="field"><label for="resolution">Resolution</label><select id="resolution"><option>1920 × 1080</option><option>1280 × 720</option><option>3840 × 2160</option><option>1080 × 1920 vertical</option></select></div><div class="field"><label for="frameRate">Frame rate</label><select id="frameRate"><option>30 fps</option><option>24 fps</option><option>25 fps</option><option>60 fps</option></select></div></div><div class="field"><label for="exportPath">Destination</label><input id="exportPath" value="Choose a local folder…" aria-describedby="exportPathHelp"><span id="exportPathHelp" class="small muted">No destination is selected in this browser prototype.</span></div><div class="field"><label for="quality">Quality</label><select id="quality"><option>Balanced</option><option>High quality</option><option>Smaller file</option></select></div><div id="exportMessage" class="notice warn">Validation required: no actual media, output path or rendering engine is connected.</div></section><section class="card"><div class="card-head"><h2>Preflight checks</h2><span class="pill warn">Not verified</span></div><div class="stack"><div class="list-item"><span class="pill warn">Pending</span><div class="meta"><strong>Source media</strong><span class="small muted">Missing-media scan not implemented</span></div></div><div class="list-item"><span class="pill warn">Pending</span><div class="meta"><strong>Export destination</strong><span class="small muted">No filesystem permission in prototype</span></div></div><div class="list-item"><span class="pill warn">Pending</span><div class="meta"><strong>Codec support</strong><span class="small muted">Must reflect installed engine</span></div></div><div class="list-item"><span class="pill warn">Pending</span><div class="meta"><strong>Disk space</strong><span class="small muted">Not detectable here</span></div></div></div><div class="notice" style="margin-top:14px">A completed job must verify that the output file exists and can be inspected. Never report success just because a process returned.</div></section></div>'}
-function settingsPage(){return head("settings",'<button class="primary" id="saveSettings">Save preferences</button>')+
-'<div class="grid cols-2"><section class="card"><h2>Appearance & language</h2><div class="field"><label for="themeSelect">Theme</label><select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select></div><div class="field"><label for="language">Language</label><select id="language"><option value="en">English</option><option value="my">မြန်မာ</option></select></div><div class="field"><label for="motion">Motion</label><select id="motion"><option>Respect system preference</option><option>Reduced motion</option></select></div><div class="notice">Theme is interactive. Other preferences are sample form values and are not persisted.</div></section><section class="card"><h2>Models & runtimes</h2><div class="field"><label for="providerUrl">Local OpenAI-compatible endpoint</label><input id="providerUrl" value="http://127.0.0.1:1234/v1"></div><div class="field"><label for="providerModel">Text model ID</label><input id="providerModel" value="qwen2.5-7b-instruct-uncensored"></div><div class="row"><button id="testConnection">Test connection</button><span class="pill warn" id="connectionStatus">Not tested</span></div><p class="small muted" id="connectionMessage">This prototype does not make network requests. Connection testing will be implemented in the desktop application.</p></section><section class="card"><h2>Storage & privacy</h2><div class="field"><label for="storagePath">Project storage folder</label><input id="storagePath" value="Not selected"></div><div class="notice">Never move or delete existing model files automatically. Local/remote selection and data disclosure must be explicit.</div></section><section class="card"><h2>Performance & diagnostics</h2><div class="list-item"><div class="meta"><strong>Hardware capability check</strong><span class="small muted">RTX 3050 6 GB / 16 GB RAM target profile</span></div><span class="pill warn">Not run</span></div><div class="list-item"><div class="meta"><strong>Dependency / license audit</strong><span class="small muted">Required before bundling engines</span></div><span class="pill warn">Pending</span></div><div class="list-item"><div class="meta"><strong>Diagnostics</strong><span class="small muted">Logs should redact prompts, secrets and local paths where appropriate</span></div><span class="pill">Design</span></div></section></div>'}
+function settingsPage(){return head("settings",'<button class="primary" id="saveSettings">Save settings</button>')+
+'<div class="grid cols-2"><section class="card"><h2>Appearance & language</h2><div class="field"><label for="themeSelect">Theme</label><select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select></div><div class="field"><label for="language">Language</label><select id="language"><option value="en">English</option><option value="my">မြန်မာ</option></select></div><div class="field"><label for="motion">Motion</label><select id="motion"><option>Respect system preference</option><option>Reduced motion</option></select></div><div class="notice">Appearance and language preferences are stored locally on this device.</div></section><section class="card"><h2>Qwen2.5 / Bionic</h2><div class="field"><label for="providerUrl">Local OpenAI-compatible API endpoint</label><input id="providerUrl" value="http://127.0.0.1:1234/v1" autocomplete="off" spellcheck="false"></div><div class="field"><label for="providerModel">Select model ID</label><input id="providerModel" list="providerModels" value="qwen2.5-7b-instruct-uncensored" autocomplete="off" spellcheck="false"><datalist id="providerModels"></datalist><span class="small muted">Discover available IDs from the running Bionic server, or enter the exact model ID shown by Bionic.</span></div><div class="row"><button id="testConnection">Discover models & test</button><span class="pill warn" id="connectionStatus" role="status" aria-live="polite">Not tested</span></div><p class="small muted" id="connectionMessage">The desktop app checks GET /v1/models only. It does not send prompts or run inference.</p></section><section class="card"><h2>ComfyUI</h2><div class="field"><label for="comfyUrl">Local ComfyUI server endpoint</label><input id="comfyUrl" value="http://127.0.0.1:8188" autocomplete="off" spellcheck="false"></div><div class="row"><button id="testComfyUI">Test ComfyUI</button><span class="pill warn" id="comfyStatus" role="status" aria-live="polite">Not tested</span></div><p class="small muted" id="comfyMessage">Checks the local /system_stats endpoint only. No workflow is submitted and no image is generated.</p></section><section class="card"><h2>Storage & privacy</h2><div class="field"><label for="storagePath">Selected workspace folder</label><input id="storagePath" value="Open Projects to view workspace" readonly></div><div class="notice">Runtime settings are saved in a small local JSON file inside the selected workspace. Only loopback HTTP endpoints are accepted. No model file is moved, copied, uploaded or downloaded.</div></section><section class="card"><h2>Model file path</h2><div class="notice">Bionic already loads and serves your Qwen2.5 model. For this API connection, selecting a GGUF file path is not required. Direct GGUF loading by STILLA is not implemented; do not change your existing Bionic model folder.</div></section><section class="card"><h2>Performance & diagnostics</h2><div class="list-item"><div class="meta"><strong>Hardware capability check</strong><span class="small muted">RTX 3050 6 GB / 16 GB RAM target profile</span></div><span class="pill warn">Not run</span></div><div class="list-item"><div class="meta"><strong>Dependency / license audit</strong><span class="small muted">Required before bundling engines</span></div><span class="pill warn">Pending</span></div><div class="list-item"><div class="meta"><strong>Diagnostics</strong><span class="small muted">Prompts, secrets and local paths are not sent to runtime health checks.</span></div><span class="pill">Local only</span></div></section></div>'}
 const renderers={projects:projectPage,script:scriptPage,generate:generatePage,edit:editPage,assets:assetsPage,export:exportPage,settings:settingsPage,characters:()=>window.STILLACharacterUI.render()};
 function render(page=currentPage){
  currentPage=page;
@@ -121,6 +121,7 @@ if(currentPage==="script"){main.insertAdjacentHTML("beforeend",'<div id="storybo
 if(currentPage==="projects")refreshProjects();
 main.querySelectorAll("[data-page]").forEach(el=>el.addEventListener("click",()=>render(el.dataset.page)));
 const $=id=>document.getElementById(id);
+if(currentPage==="settings")loadRuntimeSettings();
 if($("newProject"))$("newProject").onclick=async()=>{
  const name=prompt("Project name","Untitled film");if(!name||!name.trim())return;
  try{
@@ -161,8 +162,97 @@ if($("validateExport"))$("validateExport").onclick=()=>{$("exportMessage").textC
 if($("startExport"))$("startExport").onclick=()=>alert("Export was not started. Configure a real destination and connect the rendering engine in the desktop app.");
 if($("themeSelect"))$("themeSelect").onchange=()=>setTheme($("themeSelect").value);
 if($("language"))$("language").onchange=()=>window.STILLAI18N?.setLanguage($("language").value);
-if($("saveSettings"))$("saveSettings").onclick=()=>alert("Preferences were not persisted; this prototype only demonstrates the interaction.");
-if($("testConnection"))$("testConnection").onclick=()=>{$("connectionStatus").textContent="Not connected";$("connectionStatus").className="pill warn";$("connectionMessage").textContent="No network request made. The actual desktop provider client must validate loopback and show sanitized failures."};
+if($("saveSettings"))$("saveSettings").onclick=saveRuntimeSettings;
+if($("testConnection"))$("testConnection").onclick=discoverQwenModels;
+if($("testComfyUI"))$("testComfyUI").onclick=checkComfyUI;
+}
+function setRuntimeStatus(id,message,success=false){
+ const node=document.getElementById(id);if(!node)return;
+ node.textContent=message;node.className="pill "+(success?"good":"warn");
+}
+function setRuntimeTopStatus(message,success=false){
+ const node=document.getElementById("runtimeTopStatusText");if(node)node.textContent=message;
+ const wrap=document.getElementById("runtimeTopStatus");if(wrap)wrap.style.color=success?"var(--good)":"var(--warn)";
+}
+async function requireDesktopRuntime(){
+ if(!window.STILLABridge?.isDesktop())throw new Error("Open STILLA using the Windows desktop app to test local runtimes.");
+ const ready=await window.STILLABridge.ready();
+ if(!ready)throw new Error("The native desktop bridge is not ready. Restart the desktop app and try again.");
+}
+async function loadRuntimeSettings(){
+ const defaults={qwen_base_url:"http://127.0.0.1:1234/v1",qwen_model:"qwen2.5-7b-instruct-uncensored",comfyui_base_url:"http://127.0.0.1:8188"};
+ try{
+  let settings=defaults;
+  if(window.STILLABridge?.isDesktop()){
+   await requireDesktopRuntime();
+   settings=await window.STILLABridge.getLocalRuntimeSettings();
+   const info=await window.STILLABridge.runtimeInfo();
+   const path=document.getElementById("storagePath");if(path)path.value=info.workspace_root||"Selected workspace";
+  }else{
+   const stored=JSON.parse(localStorage.getItem("stilla.local-runtime-settings.v1")||"{}");
+   settings={...defaults,...stored};
+  }
+  const qwenUrl=document.getElementById("providerUrl"),model=document.getElementById("providerModel"),comfy=document.getElementById("comfyUrl");
+  if(qwenUrl)qwenUrl.value=settings.qwen_base_url;
+  if(model)model.value=settings.qwen_model;
+  if(comfy)comfy.value=settings.comfyui_base_url;
+  if(!window.STILLABridge?.isDesktop()){
+   document.getElementById("connectionMessage").textContent="Browser preview cannot access local model services. Use the Windows desktop app for a safe loopback connection test.";
+   document.getElementById("comfyMessage").textContent="ComfyUI health checks are available only in the Windows desktop app.";
+  }
+ }catch(error){
+  setRuntimeStatus("connectionStatus","Settings unavailable");
+  const message=document.getElementById("connectionMessage");if(message)message.textContent=error.message;
+ }
+}
+async function discoverQwenModels(){
+ const status=document.getElementById("connectionMessage");
+ setRuntimeStatus("connectionStatus","Checking…");
+ if(status)status.textContent="Checking the local Bionic /v1/models endpoint…";
+ try{
+  await requireDesktopRuntime();
+  const result=await window.STILLABridge.checkQwenConnection(document.getElementById("providerUrl").value,document.getElementById("providerModel").value);
+  const list=document.getElementById("providerModels");list.replaceChildren();
+  result.models.forEach(id=>{const option=document.createElement("option");option.value=id;list.append(option);});
+  const selectedAvailable=result.selected_model_available;
+  setRuntimeStatus("connectionStatus",selectedAvailable?"Connected":"Connected · select a served model",selectedAvailable);
+  if(status)status.textContent=selectedAvailable?"Bionic is responding and the selected model ID is available. This confirms model discovery, not text inference.":"Bionic is responding, but the selected model ID was not returned. Choose an ID from the model list and test again.";
+  setRuntimeTopStatus(selectedAvailable?"Qwen2.5 · connected":"Qwen API · model selection needed",selectedAvailable);
+ }catch(error){
+  setRuntimeStatus("connectionStatus","Unavailable");
+  if(status)status.textContent=error.message;
+  setRuntimeTopStatus("Qwen2.5 · not connected");
+ }
+}
+async function checkComfyUI(){
+ const message=document.getElementById("comfyMessage");
+ setRuntimeStatus("comfyStatus","Checking…");
+ if(message)message.textContent="Checking the local ComfyUI /system_stats endpoint…";
+ try{
+  await requireDesktopRuntime();
+  const result=await window.STILLABridge.checkComfyUIConnection(document.getElementById("comfyUrl").value);
+  setRuntimeStatus("comfyStatus","Connected",true);
+  if(message)message.textContent="ComfyUI responded"+(result.version?" · version "+result.version:"")+" · "+result.device_count+" device(s). No workflow was submitted.";
+ }catch(error){
+  setRuntimeStatus("comfyStatus","Unavailable");
+  if(message)message.textContent=error.message;
+ }
+}
+async function saveRuntimeSettings(){
+ const message=document.getElementById("connectionMessage");
+ const settings={qwen_base_url:document.getElementById("providerUrl").value.trim(),qwen_model:document.getElementById("providerModel").value.trim(),comfyui_base_url:document.getElementById("comfyUrl").value.trim()};
+ try{
+  if(window.STILLABridge?.isDesktop()){
+   await requireDesktopRuntime();
+   await window.STILLABridge.saveLocalRuntimeSettings(settings.qwen_base_url,settings.qwen_model,settings.comfyui_base_url);
+  }else localStorage.setItem("stilla.local-runtime-settings.v1",JSON.stringify(settings));
+  localStorage.setItem("stilla.ui-preferences.v1",JSON.stringify({theme:document.getElementById("themeSelect").value,language:document.getElementById("language").value,motion:document.getElementById("motion").value}));
+  setRuntimeStatus("connectionStatus","Settings saved",true);
+  if(message)message.textContent="Settings saved locally. Test each runtime separately; saving does not imply that a server is running.";
+ }catch(error){
+  setRuntimeStatus("connectionStatus","Not saved");
+  if(message)message.textContent=error.message;
+ }
 }
 function setTheme(theme){document.documentElement.dataset.theme=theme;const sel=document.getElementById("themeSelect");if(sel)sel.value=theme}
 document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>render(b.dataset.page)));
