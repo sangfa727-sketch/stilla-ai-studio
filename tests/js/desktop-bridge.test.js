@@ -99,6 +99,35 @@ test("desktop bridge uses the transactional reference attachment API", async () 
 });
 
 
+test("desktop bridge requests a project-scoped verified reference preview", async () => {
+  const calls = [];
+  const preview = { asset_id: "a".repeat(32), mime_type: "image/png", data_url: "data:image/png;base64,AQ==" };
+  const api = new Proxy({}, {
+    get(_target, method) {
+      return async (...args) => {
+        calls.push([String(method), ...args]);
+        if (method === "load_character_reference_preview") return preview;
+        return null;
+      };
+    },
+  });
+  const window = {
+    location: { search: "?runtime=desktop" },
+    pywebview: { api },
+    addEventListener() {},
+  };
+  vm.runInNewContext(source, { window, URLSearchParams });
+  const result = await window.STILLABridge.loadCharacterReferencePreview(
+    "project_1", "hero_1", "a".repeat(32),
+  );
+
+  assert.deepEqual(result, preview);
+  assert.deepEqual(calls, [[
+    "load_character_reference_preview", "project_1", "hero_1", "a".repeat(32),
+  ]]);
+});
+
+
 test("desktop bridge retains the legacy reference import method", async () => {
   const calls = [];
   const api = new Proxy({}, {

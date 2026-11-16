@@ -29,6 +29,8 @@
     createProject: (title, language) => call("create_project", title, language),
     listCharacters: (projectId) => call("list_character_profiles", projectId),
     listCharacterRecords: (projectId) => call("list_character_profile_records", projectId),
+    loadCharacterReferencePreview: (projectId, characterId, assetId) =>
+      call("load_character_reference_preview", projectId, characterId, assetId),
     saveCharacter: (projectId, profile, expectedRevision) =>
       call("save_character_profile", projectId, profile, expectedRevision),
     deleteCharacter: (projectId, characterId) => call("delete_character_profile", projectId, characterId),
