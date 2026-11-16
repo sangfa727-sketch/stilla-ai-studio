@@ -17,6 +17,15 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from stilla.ai.local_runtime import (
+    DEFAULT_COMFYUI_BASE_URL,
+    DEFAULT_QWEN_BASE_URL,
+    DEFAULT_QWEN_MODEL,
+    LocalRuntimeError,
+    test_comfyui_connection as check_comfyui_connection,
+    test_qwen_connection as check_qwen_connection,
+    validate_runtime_settings,
+)
 from stilla.characters.revisions import (
     CharacterRevisionError,
     append_character_revision,
@@ -29,15 +38,6 @@ from stilla.characters.revisions import (
 from stilla.characters.schema import CharacterProfile, CharacterProfileError, CharacterReference
 from stilla.characters.storage import CharacterStorageError, load_character, save_character
 from stilla.characters.storyboard import CharacterBoundShotPlan, StoryboardBindingError
-from stilla.ai.local_runtime import (
-    DEFAULT_COMFYUI_BASE_URL,
-    DEFAULT_QWEN_BASE_URL,
-    DEFAULT_QWEN_MODEL,
-    LocalRuntimeError,
-    test_comfyui_connection as check_comfyui_connection,
-    test_qwen_connection as check_qwen_connection,
-    validate_runtime_settings,
-)
 from stilla.media.image_validation import ImageValidationError, verify_image_bytes
 from stilla.media.workspace import (
     ProjectWorkspace,
