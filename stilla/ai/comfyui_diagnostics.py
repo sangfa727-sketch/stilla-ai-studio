@@ -8,6 +8,10 @@ from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from stilla.ai.comfyui_config import ComfyUIConfig
+from stilla.ai.comfyui_capabilities import (
+    ComfyUICapabilityError,
+    inspect_comfyui_capabilities,
+)
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -23,6 +27,7 @@ class ComfyUIDiagnostics:
     object_info_available: bool
     node_count: int
     message: str
+    workflow_capabilities: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -32,6 +37,7 @@ class ComfyUIDiagnostics:
             "object_info_available": self.object_info_available,
             "node_count": self.node_count,
             "message": self.message,
+            "workflow_capabilities": self.workflow_capabilities,
         }
 
 
@@ -99,11 +105,23 @@ def diagnose_comfyui(config: ComfyUIConfig) -> ComfyUIDiagnostics:
             node_count=0,
             message="ComfyUI returned an unsupported node catalog format",
         )
+    try:
+        capabilities = inspect_comfyui_capabilities(nodes)
+    except ComfyUICapabilityError:
+        return ComfyUIDiagnostics(
+            configured=True,
+            reachable=True,
+            system_stats_available=True,
+            object_info_available=False,
+            node_count=0,
+            message="ComfyUI returned an invalid or unsupported node catalog",
+        )
     return ComfyUIDiagnostics(
         configured=True,
         reachable=True,
         system_stats_available=True,
         object_info_available=True,
-        node_count=len(nodes),
+        node_count=capabilities.node_count,
         message="Local ComfyUI is reachable; node catalog discovered",
+        workflow_capabilities=capabilities.to_dict(),
     )
