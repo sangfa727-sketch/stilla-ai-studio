@@ -126,7 +126,9 @@ class DesktopWorkspaceAPI:
         """Persist validated loopback-only endpoint and model preferences."""
         try:
             settings = validate_runtime_settings(qwen_base_url, qwen_model, comfyui_base_url)
-            encoded = json.dumps(settings, ensure_ascii=False, allow_nan=False, indent=2).encode("utf-8")
+            encoded = json.dumps(
+                settings, ensure_ascii=False, allow_nan=False, indent=2
+            ).encode("utf-8")
             with self._lock:
                 target = self._workspace.root / ".stilla-runtime-settings.json"
                 if target.is_symlink():
@@ -151,7 +153,6 @@ class DesktopWorkspaceAPI:
             return check_comfyui_connection(base_url)
         except LocalRuntimeError as exc:
             raise DesktopAPIError(str(exc)) from None
-
 
     def choose_workspace_directory(self) -> dict[str, Any]:
         """Open a native directory picker; JS cannot supply an arbitrary filesystem path."""
