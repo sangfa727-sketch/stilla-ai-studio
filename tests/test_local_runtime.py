@@ -79,7 +79,13 @@ def test_comfyui_rejects_non_loopback_or_unsupported_urls(url: str) -> None:
 
 
 def test_qwen_discovers_model_ids_and_reports_selected_model() -> None:
-    with local_server({"/v1/models": (200, {"data": [{"id": "qwen-local"}, {"id": "other"}, {"id": "qwen-local"}]})}) as root:
+    routes = {
+        "/v1/models": (
+            200,
+            {"data": [{"id": "qwen-local"}, {"id": "other"}, {"id": "qwen-local"}]},
+        )
+    }
+    with local_server(routes) as root:
         result = check_qwen_connection(root + "/v1", "qwen-local")
     assert result == {
         "connected": True,
@@ -103,9 +109,11 @@ def test_qwen_rejects_invalid_models_payload() -> None:
 
 
 def test_comfyui_checks_system_stats_without_submitting_workflow() -> None:
-    with local_server({
-        "/system_stats": (200, {"system": {"comfyui_version": "0.3.26"}, "devices": [{"name": "GPU"}]})
-    }) as root:
+    payload = {
+        "system": {"comfyui_version": "0.3.26"},
+        "devices": [{"name": "GPU"}],
+    }
+    with local_server({"/system_stats": (200, payload)}) as root:
         result = check_comfyui_connection(root)
     assert result == {"connected": True, "version": "0.3.26", "device_count": 1}
 
