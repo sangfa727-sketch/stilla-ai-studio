@@ -70,3 +70,22 @@ def test_runtime_settings_refuse_symlink_target(tmp_path: Path) -> None:
             "http://127.0.0.1:8188",
         )
     assert target.read_text(encoding="utf-8") == '{"untouched": true}'
+
+
+
+def test_runtime_settings_reject_deeply_nested_corrupt_json_without_rewriting(
+    tmp_path: Path,
+) -> None:
+    api = DesktopWorkspaceAPI(tmp_path / "workspace")
+    settings_path = api._workspace.root / ".stilla-runtime-settings.json"
+    malformed = (
+        '{"schema_version":1,"qwen_base_url":"http://127.0.0.1:1234/v1",'
+        '"qwen_model":"qwen","comfyui_base_url":"http://127.0.0.1:8188",'
+        '"extra":' + "[" * 2000 + "0" + "]" * 2000 + "}"
+    )
+    settings_path.write_text(malformed, encoding="utf-8")
+
+    with pytest.raises(DesktopAPIError, match="failed validation"):
+        api.get_local_runtime_settings()
+
+    assert settings_path.read_text(encoding="utf-8") == malformed
