@@ -24,6 +24,12 @@
       window.addEventListener("pywebviewready", () => resolve(Boolean(api())), { once: true });
     }),
     runtimeInfo: () => call("get_runtime_info"),
+    getLocalRuntimeSettings: () => call("get_local_runtime_settings"),
+    saveLocalRuntimeSettings: (qwenBaseUrl, qwenModel, comfyuiBaseUrl) =>
+      call("save_local_runtime_settings", qwenBaseUrl, qwenModel, comfyuiBaseUrl),
+    checkQwenConnection: (baseUrl, selectedModel) =>
+      call("check_qwen_connection", baseUrl, selectedModel),
+    checkComfyUIConnection: (baseUrl) => call("check_comfyui_connection", baseUrl),
     chooseWorkspace: () => call("choose_workspace_directory"),
     listProjects: () => call("list_projects"),
     createProject: (title, language) => call("create_project", title, language),
