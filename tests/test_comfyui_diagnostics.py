@@ -40,6 +40,9 @@ def test_diagnostics_discovers_nodes_without_submitting_workflows(monkeypatch) -
     assert result.system_stats_available
     assert result.object_info_available
     assert result.node_count == 2
+    assert result.workflow_capabilities is not None
+    assert result.workflow_capabilities["basic_text_to_image_available"] is False
+    assert result.workflow_capabilities["reference_conditioning_verified"] is False
     assert calls == ["system_stats", "object_info"]
     assert "prompt" not in calls
 
@@ -76,3 +79,24 @@ def test_get_json_rejects_oversized_response(monkeypatch) -> None:
     )())
     with pytest.raises(ValueError, match="size limit"):
         diagnostics._get_json(ComfyUIConfig(max_response_bytes=20), "system_stats")
+
+
+
+def test_diagnostics_reports_reference_node_as_candidate_only(monkeypatch) -> None:
+    catalog = {
+        "CLIPTextEncode": {"input": {"required": {}}},
+        "KSampler": {"input": {"required": {}}},
+        "LoadImage": {"input": {"required": {}}},
+        "SaveImage": {"input": {"required": {}}},
+        "IPAdapterAdvanced": {"input": {"required": {"image": ["IMAGE"]}}},
+    }
+    monkeypatch.setattr(
+        diagnostics, "_get_json",
+        lambda config, path: {"system": {}} if path == "system_stats" else catalog,
+    )
+    result = diagnostics.diagnose_comfyui(ComfyUIConfig())
+    assert result.workflow_capabilities["basic_text_to_image_available"] is True
+    assert result.workflow_capabilities["reference_conditioning_candidates"] == [
+        "IPAdapterAdvanced"
+    ]
+    assert result.workflow_capabilities["reference_conditioning_verified"] is False
