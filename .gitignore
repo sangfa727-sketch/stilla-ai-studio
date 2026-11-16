@@ -33,3 +33,4 @@ models/
 dist/
 build/
 *.spec
+!packaging/stilla.spec

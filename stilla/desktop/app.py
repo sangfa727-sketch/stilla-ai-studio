@@ -1,13 +1,21 @@
 """Optional PyWebView desktop entry point.
 
-Run with: python -m stilla.desktop.app
-Install the optional runtime with: pip install -e ".[desktop]"
+Run from source with: python -m stilla.desktop.app
+Install the desktop runtime with: pip install -e ".[desktop]"
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 from stilla.desktop.workspace_api import DesktopWorkspaceAPI
+
+
+def prototype_entrypoint() -> Path:
+    """Resolve the prototype from source or the PyInstaller one-folder bundle."""
+    bundle_root = getattr(sys, "_MEIPASS", None)
+    root = Path(bundle_root) if bundle_root else Path(__file__).resolve().parents[2]
+    return root / "apps" / "desktop-prototype" / "index.html"
 
 
 def main() -> None:
@@ -18,12 +26,7 @@ def main() -> None:
             'PyWebView is optional. Install it with: pip install -e ".[desktop]"'
         ) from exc
 
-    prototype = (
-        Path(__file__).resolve().parents[2]
-        / "apps"
-        / "desktop-prototype"
-        / "index.html"
-    )
+    prototype = prototype_entrypoint()
     if not prototype.is_file():
         raise SystemExit(f"Desktop prototype entry point not found: {prototype}")
 
