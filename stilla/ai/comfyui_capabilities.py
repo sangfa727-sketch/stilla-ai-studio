@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Any
 
 from stilla.ai.comfyui_config import ComfyUIConfig
 from stilla.ai.comfyui_diagnostics import _get_json
