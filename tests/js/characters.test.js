@@ -41,6 +41,31 @@ test("reference preview decoder accepts a decoded bounded image", async () => {
   assert.deepEqual({ width: result.width, height: result.height }, { width: 2, height: 3 });
 });
 
+test("reference preview decoder preserves the 512 KiB browser limit by default", async () => {
+  const ui = loadCharacterUI();
+  const oversizedBrowserPreview = "data:image/png;base64," + "A".repeat(700 * 1024);
+  await assert.rejects(
+    ui.decodeReferenceImage(oversizedBrowserPreview),
+    /invalid or too large/,
+  );
+});
+
+test("desktop reference preview decoder accepts payloads above 512 KiB up to 10 MiB", async () => {
+  const ui = loadCharacterUI();
+  const desktopPreview = "data:image/png;base64," + "A".repeat(800 * 1024);
+  const result = await ui.decodeReferenceImage(desktopPreview, 10 * 1024 * 1024);
+  assert.deepEqual({ width: result.width, height: result.height }, { width: 2, height: 3 });
+});
+
+test("desktop reference preview decoder rejects payloads above 10 MiB", async () => {
+  const ui = loadCharacterUI();
+  const oversizedDesktopPreview = "data:image/png;base64," + "A".repeat(14 * 1024 * 1024);
+  await assert.rejects(
+    ui.decodeReferenceImage(oversizedDesktopPreview, 10 * 1024 * 1024),
+    /invalid or too large/,
+  );
+});
+
 test("reference preview decoder rejects non-data URLs and unsupported formats", async () => {
   const ui = loadCharacterUI();
   await assert.rejects(
