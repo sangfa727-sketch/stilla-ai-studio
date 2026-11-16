@@ -63,55 +63,30 @@ The application should discover compatible models through `GET /models` and use 
 - [ ] M5: First supported image-generation workflow.
 - [ ] M6: Video-generation engine evaluation and hardware-bounded prototype.
 - [ ] M7: Timeline composition, FFmpeg render, and export.
-- [ ] M8: End-to-end Windows smoke tests and packaging.
+- [ ] M8: End-to-end Windows smoke tests and packaging
 
 ## License
 
 No license has been selected yet. Do not assume this repository or any future third-party integration is licensed for redistribution until a license review is completed.
 
-
 ## UI languages
 
 The interface supports English (EN) and Burmese (MY). Character dialogue language remains a separate per-character setting. Browser mode keeps its own project-scoped prototype data in localStorage; it is not a substitute for durable desktop project storage.
 
+## Optional Windows desktop runtime (M7e–M7k)
 
-## Optional Windows desktop runtime (M7e)
-
-The HTML prototype can still be opened directly in a browser. To launch the same UI
-inside the optional PyWebView desktop host:
+The HTML prototype can still be opened directly in a browser. To launch the same UI inside the optional PyWebView desktop host:
 
 1. Install Python 3.11 or newer.
-2. Install the desktop extra: python -m pip install -e ".[desktop,dev,image]".
-3. Launch: python -m stilla.desktop.app.
+2. Install the desktop extra: `python -m pip install -e ".[desktop,dev,image]"`.
+3. Launch: `python -m stilla.desktop.app`.
 
-The optional desktop host exposes a narrow local bridge for workspace selection,
-project management, validated documents, character profiles, and native reference
-image import. M7e connected project and character persistence; M7f connected the
-Storyboard character-binding workflow. M7g adds an append-only project-local character
-revision ledger, cross-process project locks, and compare-and-swap saves for desktop
-characters and Storyboards. M7h adds journaled native reference-image attachment,
-crash recovery, and conservative orphan cleanup that preserves assets referenced by any
-immutable character revision. The legacy character profile and bundle formats remain
-unchanged.
+The optional desktop host exposes a narrow local bridge for workspace selection, project management, validated documents, character profiles, and native reference image import. M7e connected project and character persistence; M7f connected the Storyboard character-binding workflow. M7g adds an append-only project-local character revision ledger, cross-process project locks, and compare-and-swap saves for desktop characters and Storyboards. M7h adds journaled native reference-image attachment, crash recovery, and conservative orphan cleanup that preserves assets referenced by any immutable character revision. The legacy character profile and bundle formats remain unchanged.
 
-The revision ledger is authoritative for desktop character history. Browser-only mode
-continues to use browser-local storage and does not gain project-folder durability. M7i adds
-a project-scoped preview bridge that verifies reference ownership, safe paths, SHA-256,
-container dimensions, and full pixel decoding through the optional Pillow image extra;
-the embedded browser also decodes each image before displaying it. Preview data is held
-in a small in-memory cache and is not copied into browser storage. This is not a malware
-scan or a substitute for physical-device acceptance.
-M7j adds desktop-only, loopback-restricted health checks for the existing Bionic
-OpenAI-compatible Qwen endpoint (GET /v1/models) and ComfyUI (GET /system_stats), plus
-workspace-local persistence for endpoint/model preferences. These checks do not send
-prompts, run inference, submit ComfyUI workflows, generate images, or load GGUF files
-directly. The Qwen model remains managed by the existing Bionic runtime. The defaults
-are `http://127.0.0.1:1234/v1` and `http://127.0.0.1:8188`; adjust them only if the
-local services use different ports. Browser-only preview cannot test loopback services.
+The revision ledger is authoritative for desktop character history. Browser-only mode continues to use browser-local storage and does not gain project-folder durability. M7i adds a project-scoped preview bridge that verifies reference ownership, safe paths, SHA-256, container dimensions, and full pixel decoding through the optional Pillow image extra; the embedded browser also decodes each image before displaying it. Preview data is held in a small in-memory cache and is not copied into browser storage. This is not a malware scan or a substitute for physical-device acceptance.
 
-ComfyUI reference conditioning, Windows installer packaging, and phone-native installation
-are not included yet. Windows native dialogs, msvcrt locking, Burmese font rendering,
-restart recovery, responsive device behavior, real Qwen inference, ComfyUI workflow
-submission, and local GPU/model smoke tests still require acceptance on the user's PC
-and phone. The project is not production-ready until those environment-specific checks
-and the remaining workflow gates are completed.
+M7j adds desktop-only, loopback-restricted health checks for the existing Bionic OpenAI-compatible Qwen endpoint (`GET /v1/models`) and ComfyUI (`GET /system_stats`), plus workspace-local persistence for endpoint/model preferences. These checks do not send prompts, run inference, submit ComfyUI workflows, generate images, or load GGUF files directly. The Qwen model remains managed by the existing Bionic runtime. The defaults are `http://127.0.0.1:1234/v1` and `http://127.0.0.1:8188`; adjust them only if the local services use different ports. Browser-only preview cannot test loopback services.
+
+M7k adds an optional Windows one-folder package built with PyInstaller. It resolves the HTML prototype from the bundle resource directory and includes the prototype files in the build. Build locally with `python -m pip install -e ".[desktop,dev,image,packaging]"` followed by `python -m PyInstaller --noconfirm packaging/stilla.spec`; launch `dist/STILLA-AI-Studio/STILLA-AI-Studio.exe`. The package does not include Python, Bionic, Qwen model weights, ComfyUI, generated media, or the WebView2 runtime. Windows requires the Microsoft Edge WebView2 Runtime; install or repair it separately through the official Microsoft installer if it is absent. STILLA does not silently download or install it. CI builds and verifies the package artifact but cannot prove it launches on the user's PC.
+
+ComfyUI reference conditioning, phone-native installation, actual inference and workflow generation are not included yet. Windows native dialogs, Burmese font rendering, restart recovery, responsive device behavior, real Qwen inference, ComfyUI workflow submission, and local GPU/model smoke tests still require acceptance on the user's PC and phone. The project is not production-ready until those environment-specific checks and the remaining workflow gates are completed.
