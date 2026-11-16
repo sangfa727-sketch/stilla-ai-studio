@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 
 DEFAULT_QWEN_BASE_URL = "http://127.0.0.1:1234/v1"
@@ -16,7 +16,7 @@ DEFAULT_QWEN_MODEL = "qwen2.5-7b-instruct-uncensored"
 DEFAULT_COMFYUI_BASE_URL = "http://127.0.0.1:8188"
 _MAX_RESPONSE_BYTES = 256 * 1024
 _MAX_MODELS = 100
-_ALLOWED_HOSTS = {"127.0.0.1", "::1", "localhost"}
+_ALLOWED_HOSTS = {"127.0.0.1", "::1"}
 
 
 class LocalRuntimeError(ValueError):
@@ -81,7 +81,7 @@ def _get_json(url: str, *, service: str, timeout_seconds: float = 3.0) -> dict:
         headers={"Accept": "application/json", "User-Agent": "STILLA-AI-Studio"},
         method="GET",
     )
-    opener = build_opener(_NoRedirect)
+    opener = build_opener(ProxyHandler({}), _NoRedirect)
     try:
         with opener.open(request, timeout=timeout_seconds) as response:
             if response.status != 200:
@@ -90,12 +90,14 @@ def _get_json(url: str, *, service: str, timeout_seconds: float = 3.0) -> dict:
     except HTTPError as exc:
         raise LocalRuntimeError(f"{service} returned HTTP {exc.code}") from None
     except (URLError, TimeoutError, OSError):
-        raise LocalRuntimeError(f"{service} is unavailable. Check that its local server is running.") from None
+        raise LocalRuntimeError(
+            f"{service} is unavailable. Check that its local server is running."
+        ) from None
     if len(raw) > _MAX_RESPONSE_BYTES:
         raise LocalRuntimeError(f"{service} response exceeded the 256 KB safety limit")
     try:
         payload = json.loads(raw.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):
         raise LocalRuntimeError(f"{service} returned invalid JSON") from None
     if not isinstance(payload, dict):
         raise LocalRuntimeError(f"{service} returned an unsupported response")
