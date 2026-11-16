@@ -15,7 +15,6 @@ from urllib.request import (
     build_opener,
 )
 
-
 DEFAULT_QWEN_BASE_URL = "http://127.0.0.1:1234/v1"
 DEFAULT_QWEN_MODEL = "qwen2.5-7b-instruct-uncensored"
 DEFAULT_COMFYUI_BASE_URL = "http://127.0.0.1:8188"
