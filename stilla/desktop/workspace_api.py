@@ -115,7 +115,7 @@ class DesktopWorkspaceAPI:
                 stored.get("qwen_model", DEFAULT_QWEN_MODEL),
                 stored.get("comfyui_base_url", DEFAULT_COMFYUI_BASE_URL),
             )
-        except (UnicodeDecodeError, json.JSONDecodeError, LocalRuntimeError, ValueError, TypeError):
+        except (UnicodeDecodeError, json.JSONDecodeError, LocalRuntimeError, ValueError, TypeError, RecursionError):
             raise DesktopAPIError(
                 "Local runtime settings failed validation; existing settings were preserved"
             ) from None
