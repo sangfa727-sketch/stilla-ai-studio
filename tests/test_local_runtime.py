@@ -13,8 +13,8 @@ from stilla.ai.local_runtime import (
     DEFAULT_QWEN_BASE_URL,
     DEFAULT_QWEN_MODEL,
     LocalRuntimeError,
-    test_comfyui_connection,
-    test_qwen_connection,
+    test_comfyui_connection as check_comfyui_connection,
+    test_qwen_connection as check_qwen_connection,
     validate_runtime_settings,
 )
 
@@ -80,7 +80,7 @@ def test_comfyui_rejects_non_loopback_or_unsupported_urls(url: str) -> None:
 
 def test_qwen_discovers_model_ids_and_reports_selected_model() -> None:
     with local_server({"/v1/models": (200, {"data": [{"id": "qwen-local"}, {"id": "other"}, {"id": "qwen-local"}]})}) as root:
-        result = test_qwen_connection(root + "/v1", "qwen-local")
+        result = check_qwen_connection(root + "/v1", "qwen-local")
     assert result == {
         "connected": True,
         "models": ["qwen-local", "other"],
@@ -106,7 +106,7 @@ def test_comfyui_checks_system_stats_without_submitting_workflow() -> None:
     with local_server({
         "/system_stats": (200, {"system": {"comfyui_version": "0.3.26"}, "devices": [{"name": "GPU"}]})
     }) as root:
-        result = test_comfyui_connection(root)
+        result = check_comfyui_connection(root)
     assert result == {"connected": True, "version": "0.3.26", "device_count": 1}
 
 
