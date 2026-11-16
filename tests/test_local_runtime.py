@@ -72,7 +72,10 @@ def test_qwen_rejects_non_loopback_or_unsupported_urls(url: str) -> None:
         validate_runtime_settings(qwen_base_url=url)
 
 
-@pytest.mark.parametrize("url", ["http://example.com", "https://127.0.0.1", "http://127.0.0.1/ui"])
+@pytest.mark.parametrize(
+    "url",
+    ["http://example.com", "https://127.0.0.1", "http://127.0.0.1/ui"],
+)
 def test_comfyui_rejects_non_loopback_or_unsupported_urls(url: str) -> None:
     with pytest.raises(LocalRuntimeError):
         validate_runtime_settings(comfyui_base_url=url)
@@ -96,16 +99,19 @@ def test_qwen_discovers_model_ids_and_reports_selected_model() -> None:
 
 
 def test_qwen_connection_distinguishes_unavailable_selected_model() -> None:
-    with local_server({"/v1/models": (200, {"data": [{"id": "qwen-local"}]})}) as root:
-        result = check_qwen_connection(root + "/v1", "missing-model")
+    route = {"/v1/models": (200, {"data": [{"id": "qwen-local"}]})}
+    with local_server(route) as root:
+        result = discover_qwen_models(root + "/v1", "missing-model")
     assert result["connected"] is True
     assert result["selected_model_available"] is False
 
 
 def test_qwen_rejects_invalid_models_payload() -> None:
-    with local_server({"/v1/models": (200, {"models": [{"name": "qwen"}]})}) as root:
-        with pytest.raises(LocalRuntimeError, match="data list"):
-            check_qwen_connection(root + "/v1", "qwen")
+    route = {"/v1/models": (200, {"models": [{"name": "qwen"}]})}
+    with local_server(route) as root, pytest.raises(
+        LocalRuntimeError, match="data list"
+    ):
+        discover_qwen_models(root + "/v1", "qwen")
 
 
 def test_comfyui_checks_system_stats_without_submitting_workflow() -> None:
@@ -119,18 +125,20 @@ def test_comfyui_checks_system_stats_without_submitting_workflow() -> None:
 
 
 def test_comfyui_rejects_unexpected_status_payload() -> None:
-    with local_server({"/system_stats": (200, {"status": "ok"})}) as root:
-        with pytest.raises(LocalRuntimeError, match="unsupported structure"):
-            check_comfyui_connection(root)
+    route = {"/system_stats": (200, {"status": "ok"})}
+    with local_server(route) as root, pytest.raises(
+        LocalRuntimeError, match="unsupported structure"
+    ):
+        check_comfyui_status(root)
 
 
 def test_local_runtime_does_not_follow_redirects() -> None:
-    with local_server({"/v1/models": (302, {"location": "https://example.com"})}) as root:
-        with pytest.raises(LocalRuntimeError, match="HTTP 302"):
-            check_qwen_connection(root + "/v1", "qwen")
+    route = {"/v1/models": (302, {"location": "https://example.com"})}
+    with local_server(route) as root, pytest.raises(LocalRuntimeError, match="HTTP 302"):
+        discover_qwen_models(root + "/v1", "qwen")
 
 
 def test_local_runtime_bounds_response_size() -> None:
-    with local_server({"/v1/models": (200, b"x" * (256 * 1024 + 1))}) as root:
-        with pytest.raises(LocalRuntimeError, match="256 KB"):
-            check_qwen_connection(root + "/v1", "qwen")
+    route = {"/v1/models": (200, b"x" * (256 * 1024 + 1))}
+    with local_server(route) as root, pytest.raises(LocalRuntimeError, match="256 KB"):
+        discover_qwen_models(root + "/v1", "qwen")
