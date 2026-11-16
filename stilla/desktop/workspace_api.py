@@ -29,6 +29,15 @@ from stilla.characters.revisions import (
 from stilla.characters.schema import CharacterProfile, CharacterProfileError, CharacterReference
 from stilla.characters.storage import CharacterStorageError, load_character, save_character
 from stilla.characters.storyboard import CharacterBoundShotPlan, StoryboardBindingError
+from stilla.ai.local_runtime import (
+    DEFAULT_COMFYUI_BASE_URL,
+    DEFAULT_QWEN_BASE_URL,
+    DEFAULT_QWEN_MODEL,
+    LocalRuntimeError,
+    test_comfyui_connection as check_comfyui_connection,
+    test_qwen_connection as check_qwen_connection,
+    validate_runtime_settings,
+)
 from stilla.media.image_validation import ImageValidationError, verify_image_bytes
 from stilla.media.workspace import (
     ProjectWorkspace,
@@ -73,6 +82,76 @@ class DesktopWorkspaceAPI:
             "workspace_root": str(self._workspace.root),
             "ready": True,
         }
+
+    def get_local_runtime_settings(self) -> dict[str, object]:
+        """Load bounded, non-secret runtime preferences from the selected workspace."""
+        target = self._workspace.root / ".stilla-runtime-settings.json"
+        with self._lock:
+            if target.is_symlink():
+                raise DesktopAPIError("Local runtime settings path is unsafe")
+            try:
+                flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+                descriptor = os.open(target, flags)
+            except FileNotFoundError:
+                return validate_runtime_settings()
+            except OSError:
+                raise DesktopAPIError("Could not safely read local runtime settings") from None
+            try:
+                with os.fdopen(descriptor, "rb") as stream:
+                    metadata = os.fstat(stream.fileno())
+                    if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 16_384:
+                        raise DesktopAPIError("Local runtime settings file is invalid")
+                    raw = stream.read(16_385)
+            except OSError:
+                raise DesktopAPIError("Could not safely read local runtime settings") from None
+        if len(raw) > 16_384:
+            raise DesktopAPIError("Local runtime settings file exceeds the size limit")
+        try:
+            stored = json.loads(raw.decode("utf-8"))
+            if not isinstance(stored, dict) or stored.get("schema_version") != 1:
+                raise ValueError
+            return validate_runtime_settings(
+                stored.get("qwen_base_url", DEFAULT_QWEN_BASE_URL),
+                stored.get("qwen_model", DEFAULT_QWEN_MODEL),
+                stored.get("comfyui_base_url", DEFAULT_COMFYUI_BASE_URL),
+            )
+        except (UnicodeDecodeError, json.JSONDecodeError, LocalRuntimeError, ValueError, TypeError):
+            raise DesktopAPIError(
+                "Local runtime settings failed validation; existing settings were preserved"
+            ) from None
+
+    def save_local_runtime_settings(
+        self, qwen_base_url: str, qwen_model: str, comfyui_base_url: str
+    ) -> dict[str, object]:
+        """Persist validated loopback-only endpoint and model preferences."""
+        try:
+            settings = validate_runtime_settings(qwen_base_url, qwen_model, comfyui_base_url)
+            encoded = json.dumps(settings, ensure_ascii=False, allow_nan=False, indent=2).encode("utf-8")
+            with self._lock:
+                target = self._workspace.root / ".stilla-runtime-settings.json"
+                if target.is_symlink():
+                    raise DesktopAPIError("Local runtime settings path is unsafe")
+                atomic_write_bytes(target, encoded)
+        except DesktopAPIError:
+            raise
+        except (LocalRuntimeError, OSError, WorkspaceError, ValueError):
+            raise DesktopAPIError("Could not safely save local runtime settings") from None
+        return settings
+
+    def check_qwen_connection(self, base_url: str, selected_model: str) -> dict[str, object]:
+        """Discover local OpenAI-compatible model IDs; no prompt or inference is sent."""
+        try:
+            return check_qwen_connection(base_url, selected_model)
+        except LocalRuntimeError as exc:
+            raise DesktopAPIError(str(exc)) from None
+
+    def check_comfyui_connection(self, base_url: str) -> dict[str, object]:
+        """Check ComfyUI health without submitting or changing any workflow."""
+        try:
+            return check_comfyui_connection(base_url)
+        except LocalRuntimeError as exc:
+            raise DesktopAPIError(str(exc)) from None
+
 
     def choose_workspace_directory(self) -> dict[str, Any]:
         """Open a native directory picker; JS cannot supply an arbitrary filesystem path."""
