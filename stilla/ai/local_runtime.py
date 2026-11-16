@@ -9,10 +9,10 @@ import json
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import (
-    build_opener,
     HTTPRedirectHandler,
     ProxyHandler,
     Request,
+    build_opener,
 )
 
 
