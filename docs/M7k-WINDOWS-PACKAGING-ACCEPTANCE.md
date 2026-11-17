@@ -32,7 +32,7 @@ Keep the entire `dist/STILLA-AI-Studio` directory together. This is an onedir pa
 
 - [ ] Extract the complete package to a writable local folder.
 - [ ] Launch `STILLA-AI-Studio.exe`.
-- [ ] Confirm the UI opens without a missing-resource error.
+- [ ] Confirm the UI opens without a missing-resource error. The desktop host serves bundled UI, CSS, and JavaScript through pywebview’s loopback HTTP server instead of direct `file://` navigation.
 - [ ] Switch UI language between English and Myanmar.
 - [ ] Create a disposable test project and verify it appears after restart.
 - [ ] Import a test reference image using the native file picker.
