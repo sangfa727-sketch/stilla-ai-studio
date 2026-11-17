@@ -36,19 +36,19 @@ jobs:
         run: python -m pip install -e '.[desktop,dev,image,packaging]'
       - name: Build one-folder Windows desktop application
         run: python -m PyInstaller --noconfirm packaging/stilla.spec
-      - name: Verify packaged executable and UI resources
+      - name: Verify packaged executable and exact runtime UI path
         shell: pwsh
         run: |
           $exe = "dist/STILLA-AI-Studio/STILLA-AI-Studio.exe"
+          $internal = "dist/STILLA-AI-Studio/_internal"
+          $html = "$internal/apps/desktop-prototype/index.html"
           if (-not (Test-Path $exe)) {
             throw "Packaged executable missing: $exe"
           }
-          $html = Get-ChildItem "dist/STILLA-AI-Studio" -Filter "index.html" -Recurse |
-            Where-Object { $_.FullName -match "apps[\\/]desktop-prototype[\\/]index.html$" } |
-            Select-Object -First 1
-          if (-not $html) {
-            throw "Bundled desktop prototype index.html is missing"
+          if (-not (Test-Path $html)) {
+            throw "Expected runtime UI path missing: $html"
           }
+          python -c "import sys; from pathlib import Path; sys._MEIPASS = str(Path(r'$internal').resolve()); from stilla.desktop.app import prototype_entrypoint; p = prototype_entrypoint(); assert p == Path(r'$html').resolve(), f'Unexpected resolved UI path: {p}'; print(f'Runtime UI path OK: {p}')"
       - name: Upload Windows package artifact
         uses: actions/upload-artifact@v4
         with:
@@ -81,7 +81,7 @@ jobs:
           import re
           from pathlib import Path
           html = Path("apps/desktop-prototype/index.html").read_text(encoding="utf-8")
-          scripts = re.findall(r"<script>([\s\S]*?)</script>", html)
+          scripts = re.findall(r"<script>([\\s\\S]*?)</script>", html)
           if len(scripts) != 1:
               raise SystemExit(f"Expected one inline application script, found {len(scripts)}")
           Path("/tmp/stilla-inline.js").write_text(scripts[0], encoding="utf-8")
