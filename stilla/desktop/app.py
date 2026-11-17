@@ -40,11 +40,11 @@ def prototype_entrypoint() -> Path:
             if resolved.is_file():
                 return resolved
 
-    locations = "\\n".join(f"  - {path}" for path in checked)
+    locations = "\n".join(f"  - {path}" for path in checked)
     raise FileNotFoundError(
         "STILLA desktop UI (apps/desktop-prototype/index.html) was not found. "
         "Keep the complete _internal folder beside STILLA-AI-Studio.exe. "
-        f"Checked locations:\\n{locations}"
+        f"Checked locations:\n{locations}"
     )
 
 
@@ -72,9 +72,12 @@ def main() -> None:
         text_select=True,
     )
     api._attach_window(window)
+
     # Force WebView2 on Windows; the default backend may import WinForms/pythonnet
     # before falling back, which can fail in a frozen one-folder package.
-    # Serve bundled local files over pywebview’s loopback HTTP server. Direct file://\n    # navigation is unreliable in packaged Windows WebView2 and can show\n    # ERR_FILE_NOT_FOUND even when the HTML exists on disk.\n    webview.start(gui="edgechromium", debug=False, http_server=True)
+    # Serve bundled UI, CSS, and JavaScript through pywebview's loopback HTTP server.
+    # Direct file:// navigation is unreliable in packaged Windows WebView2.
+    webview.start(gui="edgechromium", debug=False, http_server=True)
 
 
 if __name__ == "__main__":
