@@ -74,7 +74,7 @@ def main() -> None:
     api._attach_window(window)
     # Force WebView2 on Windows; the default backend may import WinForms/pythonnet
     # before falling back, which can fail in a frozen one-folder package.
-    webview.start(gui="edgechromium", debug=False)
+    # Serve bundled local files over pywebview’s loopback HTTP server. Direct file://\n    # navigation is unreliable in packaged Windows WebView2 and can show\n    # ERR_FILE_NOT_FOUND even when the HTML exists on disk.\n    webview.start(gui="edgechromium", debug=False, http_server=True)
 
 
 if __name__ == "__main__":
