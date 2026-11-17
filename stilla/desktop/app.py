@@ -12,10 +12,40 @@ from stilla.desktop.workspace_api import DesktopWorkspaceAPI
 
 
 def prototype_entrypoint() -> Path:
-    """Resolve the prototype from source or the PyInstaller one-folder bundle."""
+    """Resolve the UI from source or supported PyInstaller one-folder layouts."""
+    relative_ui = Path("apps") / "desktop-prototype" / "index.html"
+    candidates: list[Path] = []
+
     bundle_root = getattr(sys, "_MEIPASS", None)
-    root = Path(bundle_root) if bundle_root else Path(__file__).resolve().parents[2]
-    return root / "apps" / "desktop-prototype" / "index.html"
+    if bundle_root:
+        candidates.append(Path(bundle_root) / relative_ui)
+
+    executable_dir = Path(sys.executable).resolve().parent
+    candidates.extend(
+        (
+            executable_dir / "_internal" / relative_ui,
+            executable_dir / relative_ui,
+        )
+    )
+
+    if not bundle_root:
+        source_root = Path(__file__).resolve().parents[2]
+        candidates.append(source_root / relative_ui)
+
+    checked: list[Path] = []
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved not in checked:
+            checked.append(resolved)
+            if resolved.is_file():
+                return resolved
+
+    locations = "\\n".join(f"  - {path}" for path in checked)
+    raise FileNotFoundError(
+        "STILLA desktop UI (apps/desktop-prototype/index.html) was not found. "
+        "Keep the complete _internal folder beside STILLA-AI-Studio.exe. "
+        f"Checked locations:\\n{locations}"
+    )
 
 
 def main() -> None:
@@ -26,9 +56,10 @@ def main() -> None:
             'PyWebView is optional. Install it with: pip install -e ".[desktop]"'
         ) from exc
 
-    prototype = prototype_entrypoint()
-    if not prototype.is_file():
-        raise SystemExit(f"Desktop prototype entry point not found: {prototype}")
+    try:
+        prototype = prototype_entrypoint()
+    except FileNotFoundError as exc:
+        raise SystemExit(str(exc)) from exc
 
     api = DesktopWorkspaceAPI()
     window = webview.create_window(
@@ -41,7 +72,9 @@ def main() -> None:
         text_select=True,
     )
     api._attach_window(window)
-    webview.start(debug=False)
+    # Force WebView2 on Windows; the default backend may import WinForms/pythonnet
+    # before falling back, which can fail in a frozen one-folder package.
+    webview.start(gui="edgechromium", debug=False)
 
 
 if __name__ == "__main__":
