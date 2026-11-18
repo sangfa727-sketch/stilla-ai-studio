@@ -60,7 +60,7 @@ def _get_json(config: ComfyUIConfig, path: str) -> object:
             raise ValueError("Local ComfyUI response exceeds configured size limit")
     try:
         return json.loads(payload.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:
         raise ValueError("Local ComfyUI returned invalid JSON") from exc
 
 
