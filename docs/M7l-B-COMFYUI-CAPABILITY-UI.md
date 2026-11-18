@@ -11,7 +11,7 @@ The report is informational only. `generation_ready=false`. The UI rejects malfo
 - The operation is available only through the existing PyWebView desktop bridge.
 - It accepts the same validated loopback-only ComfyUI base URL as M7j.
 - It reads only `/system_stats` and `/object_info`.
-- Redirects remain disabled and the response reader remains bounded.
+- Environment proxies and redirects are bypassed; the response reader remains bounded.
 - No prompts, workflows, image data, model paths, or project media are sent.
 - No custom nodes or models are installed, downloaded, updated, or reconfigured.
 - Browser preview does not attempt to access the user's local ComfyUI service.
