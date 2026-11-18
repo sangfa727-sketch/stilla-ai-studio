@@ -39,9 +39,9 @@
         seen.has(capability.capability) ||
         !allowedStatuses.has(capability.status) ||
         !Array.isArray(capability.nodes) ||
-        capability.nodes.length > 2 ||
+        capability.nodes.length > 3 ||
         !Array.isArray(capability.missing_nodes) ||
-        capability.missing_nodes.length > 2 ||
+        capability.missing_nodes.length > 3 ||
         capability.missing_nodes.some((name) => typeof name !== "string" || name.length > 200)
       ) {
         throw new Error(translate("Capability report is invalid; generation remains disabled."));
