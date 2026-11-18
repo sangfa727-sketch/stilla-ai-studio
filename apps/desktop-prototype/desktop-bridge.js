@@ -30,6 +30,7 @@
     checkQwenConnection: (baseUrl, selectedModel) =>
       call("check_qwen_connection", baseUrl, selectedModel),
     checkComfyUIConnection: (baseUrl) => call("check_comfyui_connection", baseUrl),
+    inspectComfyUICapabilities: (baseUrl) => call("inspect_comfyui_capabilities", baseUrl),
     chooseWorkspace: () => call("choose_workspace_directory"),
     listProjects: () => call("list_projects"),
     createProject: (title, language) => call("create_project", title, language),
