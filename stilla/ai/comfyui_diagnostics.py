@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 from stilla.ai.comfyui_config import ComfyUIConfig
 
@@ -37,7 +37,7 @@ class ComfyUIDiagnostics:
 
 def _get_json(config: ComfyUIConfig, path: str) -> object:
     """Fetch a bounded JSON response without following redirects."""
-    opener = build_opener(_NoRedirect)
+    opener = build_opener(ProxyHandler({}), _NoRedirect)
     request = Request(
         f"{config.base_url}/{path}",
         headers={"Accept": "application/json", "User-Agent": "STILLA-AI-Studio-local-diagnostics"},
