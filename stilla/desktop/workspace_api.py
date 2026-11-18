@@ -17,6 +17,11 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from stilla.ai.comfyui_capabilities import (
+    ComfyUICapabilityError,
+    inspect_local_conditioning_capabilities,
+)
+from stilla.ai.comfyui_config import ComfyUIConfig, ComfyUIConfigurationError
 from stilla.ai.local_runtime import (
     DEFAULT_COMFYUI_BASE_URL,
     DEFAULT_QWEN_BASE_URL,
@@ -153,6 +158,16 @@ class DesktopWorkspaceAPI:
             return check_comfyui_status(base_url)
         except LocalRuntimeError as exc:
             raise DesktopAPIError(str(exc)) from None
+
+    def inspect_comfyui_capabilities(self, base_url: str) -> dict[str, object]:
+        """Inspect installed conditioning node schemas without submitting a workflow."""
+        try:
+            config = ComfyUIConfig(base_url=base_url)
+            return inspect_local_conditioning_capabilities(config).to_dict()
+        except (ComfyUIConfigurationError, ComfyUICapabilityError, TypeError):
+            raise DesktopAPIError(
+                "Could not safely inspect the configured local ComfyUI capabilities"
+            ) from None
 
     def choose_workspace_directory(self) -> dict[str, Any]:
         """Open a native directory picker; JS cannot supply an arbitrary filesystem path."""
