@@ -113,3 +113,39 @@ test("capability UI rejects any report that claims generation readiness", () => 
     /generation remains disabled/,
   );
 });
+
+
+test("capability UI accepts the complete three-node InstantID contract", () => {
+  const { window, root } = setup();
+  const report = sampleReport();
+  report.status = "available";
+  report.capabilities[1] = {
+    capability: "instantid",
+    status: "available",
+    nodes: [
+      { class_name: "InstantIDModelLoader", required_inputs: ["instantid_file"], schema_valid: true },
+      { class_name: "InstantIDFaceAnalysis", required_inputs: ["provider"], schema_valid: true },
+      { class_name: "ApplyInstantID", required_inputs: ["instantid", "insightface", "image", "model", "positive", "negative"], schema_valid: true },
+    ],
+    missing_nodes: [],
+  };
+  window.STILLAComfyUICapabilityUI.render(root, report);
+  assert.match(root.textContent, /InstantIDModelLoader/);
+  assert.match(root.textContent, /InstantIDFaceAnalysis/);
+  assert.match(root.textContent, /ApplyInstantID/);
+});
+
+test("capability UI accepts all three missing InstantID nodes as unsupported", () => {
+  const { window, root } = setup();
+  const report = sampleReport();
+  report.capabilities[1] = {
+    capability: "instantid",
+    status: "unsupported",
+    nodes: [],
+    missing_nodes: ["InstantIDModelLoader", "InstantIDFaceAnalysis", "ApplyInstantID"],
+  };
+  window.STILLAComfyUICapabilityUI.render(root, report);
+  assert.match(root.textContent, /InstantIDModelLoader/);
+  assert.match(root.textContent, /InstantIDFaceAnalysis/);
+  assert.match(root.textContent, /ApplyInstantID/);
+});
