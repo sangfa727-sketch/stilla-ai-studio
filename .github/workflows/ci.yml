@@ -42,11 +42,18 @@ jobs:
           $exe = "dist/STILLA-AI-Studio/STILLA-AI-Studio.exe"
           $internal = "dist/STILLA-AI-Studio/_internal"
           $html = "$internal/apps/desktop-prototype/index.html"
+          $capabilityUi = "$internal/apps/desktop-prototype/comfyui-capabilities-ui.js"
           if (-not (Test-Path $exe)) {
             throw "Packaged executable missing: $exe"
           }
           if (-not (Test-Path $html)) {
             throw "Expected runtime UI path missing: $html"
+          }
+          if (-not (Test-Path $capabilityUi)) {
+            throw "Packaged ComfyUI capability UI missing: $capabilityUi"
+          }
+          if (-not (Select-String -Path $html -Pattern "comfyui-capabilities-ui.js" -Quiet)) {
+            throw "Packaged index.html does not reference the capability UI module"
           }
           python -c "import sys; from pathlib import Path; sys._MEIPASS = str(Path(r'$internal').resolve()); from stilla.desktop.app import prototype_entrypoint; p = prototype_entrypoint(); assert p == Path(r'$html').resolve(), f'Unexpected resolved UI path: {p}'; print(f'Runtime UI path OK: {p}')"
       - name: Upload Windows package artifact
