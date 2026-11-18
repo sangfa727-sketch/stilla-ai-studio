@@ -124,4 +124,4 @@ def test_get_json_disables_environment_proxies(monkeypatch) -> None:
     proxy_handlers = [handler for handler in handlers if isinstance(handler, diagnostics.ProxyHandler)]
     assert len(proxy_handlers) == 1
     assert proxy_handlers[0].proxies == {}
-    assert any(isinstance(handler, diagnostics._NoRedirect) for handler in handlers)
+    assert diagnostics._NoRedirect in handlers
