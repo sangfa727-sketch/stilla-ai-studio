@@ -52,11 +52,18 @@ function sampleReport() {
       {
         capability: "ipadapter",
         status: "available",
-        nodes: [{
-          class_name: "IPAdapterApply",
-          required_inputs: ["ipadapter", "clip_vision", "image", "model", "weight"],
-          schema_valid: true,
-        }],
+        nodes: [
+          {
+            class_name: "IPAdapterModelLoader",
+            required_inputs: ["ipadapter_file"],
+            schema_valid: true,
+          },
+          {
+            class_name: "IPAdapterApply",
+            required_inputs: ["ipadapter", "clip_vision", "image", "model", "weight"],
+            schema_valid: true,
+          },
+        ],
         missing_nodes: [],
       },
       {
@@ -119,6 +126,7 @@ test("capability UI accepts the complete three-node InstantID contract", () => {
   const { window, root } = setup();
   const report = sampleReport();
   report.status = "available";
+  report.node_count = 5;
   report.capabilities[1] = {
     capability: "instantid",
     status: "available",
