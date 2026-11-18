@@ -39,8 +39,9 @@ def test_desktop_api_returns_read_only_conditioning_capability_report(
     assert report["generation_ready"] is False
 
 
-def test_desktop_api_rejects_remote_comfyui_capability_endpoint(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize("endpoint", ["http://example.com", "http://[::1"])
+def test_desktop_api_rejects_unsafe_comfyui_capability_endpoint(
+    endpoint: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     def unexpected_request(*args, **kwargs):
         pytest.fail("Remote endpoint must be rejected before any request")
@@ -49,7 +50,7 @@ def test_desktop_api_rejects_remote_comfyui_capability_endpoint(
     api = DesktopWorkspaceAPI(tmp_path / "workspace")
 
     with pytest.raises(DesktopAPIError, match="safely inspect"):
-        api.inspect_comfyui_capabilities("http://example.com")
+        api.inspect_comfyui_capabilities(endpoint)
 
 
 def test_desktop_api_sanitizes_comfyui_capability_inspection_errors(
