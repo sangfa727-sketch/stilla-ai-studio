@@ -82,7 +82,8 @@ def test_get_json_sanitizes_deeply_nested_json(monkeypatch) -> None:
     payload = b"[" * 1500 + b"0" + b"]" * 1500
 
     class DeeplyNested:
-        headers = {"Content-Length": str(len(payload))}
+        def __init__(self):
+            self.headers = {"Content-Length": str(len(payload))}
 
         def __enter__(self):
             return self
