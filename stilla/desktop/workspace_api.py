@@ -21,7 +21,7 @@ from stilla.ai.comfyui_capabilities import (
     ComfyUICapabilityError,
     inspect_local_conditioning_capabilities,
 )
-from stilla.ai.comfyui_config import ComfyUIConfig, ComfyUIConfigurationError
+from stilla.ai.comfyui_config import ComfyUIConfig
 from stilla.ai.local_runtime import (
     DEFAULT_COMFYUI_BASE_URL,
     DEFAULT_QWEN_BASE_URL,
@@ -164,7 +164,7 @@ class DesktopWorkspaceAPI:
         try:
             config = ComfyUIConfig(base_url=base_url)
             return inspect_local_conditioning_capabilities(config).to_dict()
-        except (ComfyUIConfigurationError, ComfyUICapabilityError, TypeError):
+        except (ValueError, ComfyUICapabilityError, TypeError):
             raise DesktopAPIError(
                 "Could not safely inspect the configured local ComfyUI capabilities"
             ) from None
