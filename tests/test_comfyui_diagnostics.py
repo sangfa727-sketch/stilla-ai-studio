@@ -76,3 +76,32 @@ def test_get_json_rejects_oversized_response(monkeypatch) -> None:
     )())
     with pytest.raises(ValueError, match="size limit"):
         diagnostics._get_json(ComfyUIConfig(max_response_bytes=20), "system_stats")
+
+
+def test_get_json_sanitizes_deeply_nested_json(monkeypatch) -> None:
+    payload = b"[" * 1500 + b"0" + b"]" * 1500
+
+    class DeeplyNested:
+        headers = {"Content-Length": str(len(payload))}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def getcode(self):
+            return 200
+
+        def read(self, limit: int):
+            return payload[:limit]
+
+    opener = type(
+        "Opener",
+        (),
+        {"open": lambda self, request, timeout: DeeplyNested()},
+    )()
+    monkeypatch.setattr(diagnostics, "build_opener", lambda handler: opener)
+
+    with pytest.raises(ValueError, match="invalid JSON"):
+        diagnostics._get_json(ComfyUIConfig(max_response_bytes=5000), "object_info")
