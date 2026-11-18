@@ -22,7 +22,7 @@ jobs:
       - name: Install project and test tools
         run: python -m pip install -e '.[dev,image]'
       - name: Verify Windows file locking and local persistence
-        run: python -m pytest tests/test_media_workspace.py tests/test_character_revisions.py tests/test_desktop_workspace_api.py tests/test_character_reference_transactions.py tests/test_character_reference_preview.py tests/test_image_validation.py tests/test_local_runtime.py tests/test_local_runtime_api.py
+        run: python -m pytest tests/test_media_workspace.py tests/test_character_revisions.py tests/test_desktop_workspace_api.py tests/test_character_reference_transactions.py tests/test_character_reference_preview.py tests/test_image_validation.py tests/test_local_runtime.py tests/test_local_runtime_api.py tests/test_comfyui_capabilities_api.py
 
   windows-desktop-package:
     runs-on: windows-latest
@@ -77,6 +77,7 @@ jobs:
           node --check apps/desktop-prototype/characters.js
           node --check apps/desktop-prototype/storyboard.js
           node --check apps/desktop-prototype/desktop-bridge.js
+          node --check apps/desktop-prototype/comfyui-capabilities-ui.js
           python - <<'PY'
           import re
           from pathlib import Path
