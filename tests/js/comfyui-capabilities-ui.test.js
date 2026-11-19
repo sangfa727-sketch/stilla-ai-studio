@@ -100,8 +100,8 @@ test("capability UI renders node schemas and keeps generation explicitly disable
   assert.match(root.textContent, /InstantID/);
   assert.match(root.textContent, /IPAdapterApply/);
   assert.match(root.textContent, /Required sockets/);
-  assert.match(root.textContent, /ipadapter_file \\[COMBO · 4 choices\\]/);
-  assert.match(root.textContent, /model \\[MODEL\\]/);
+  assert.ok(root.textContent.includes("ipadapter_file [COMBO · 4 choices]"));
+  assert.ok(root.textContent.includes("model [MODEL]"));
   assert.match(root.textContent, /generation ready/i);
   assert.match(root.textContent, /No — discovery only/);
 });
