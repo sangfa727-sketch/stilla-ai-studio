@@ -55,6 +55,40 @@ def test_malformed_or_incomplete_schema_fails_closed():
     assert all(not item.schema_valid for item in ipadapter.nodes)
 
 
+def test_required_input_types_are_reported_without_exposing_combo_values():
+    catalog = catalog_with_ipadapter()
+    catalog["IPAdapterModelLoader"] = {
+        "input": {
+            "required": {
+                "ipadapter_file": [["private-a.safetensors", "private-b.safetensors"]]
+            }
+        }
+    }
+
+    result = discover_conditioning_capabilities(catalog).to_dict()
+    ipadapter = next(item for item in result["capabilities"] if item["capability"] == "ipadapter")
+    loader = next(item for item in ipadapter["nodes"] if item["class_name"] == "IPAdapterModelLoader")
+
+    assert loader["required_input_types"] == [
+        {"name": "ipadapter_file", "input_type": "COMBO", "choice_count": 2}
+    ]
+    assert "private-a.safetensors" not in repr(result)
+
+
+def test_malformed_required_socket_type_fails_closed_but_keeps_socket_name():
+    catalog = catalog_with_ipadapter()
+    catalog["IPAdapterApply"]["input"]["required"]["weight"] = [None]
+
+    result = discover_conditioning_capabilities(catalog).to_dict()
+    ipadapter = next(item for item in result["capabilities"] if item["capability"] == "ipadapter")
+    apply_node = next(item for item in ipadapter["nodes"] if item["class_name"] == "IPAdapterApply")
+    weight = next(item for item in apply_node["required_input_types"] if item["name"] == "weight")
+
+    assert ipadapter["status"] == "partial"
+    assert apply_node["schema_valid"] is False
+    assert weight["input_type"] is None
+
+
 def test_renamed_custom_nodes_are_not_fuzzy_matched():
     report = discover_conditioning_capabilities({
         "MyCustomIPAdapterLoader": node("ipadapter_file"),

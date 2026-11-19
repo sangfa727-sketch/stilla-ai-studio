@@ -71,8 +71,58 @@ def test_get_json_rejects_oversized_response(monkeypatch) -> None:
         def __init__(self):
             self.headers = {"Content-Length": "9999"}
 
-    monkeypatch.setattr(diagnostics, "build_opener", lambda handler: type(
+    monkeypatch.setattr(diagnostics, "build_opener", lambda *handlers: type(
         "Opener", (), {"open": lambda self, request, timeout: Oversized()}
     )())
     with pytest.raises(ValueError, match="size limit"):
         diagnostics._get_json(ComfyUIConfig(max_response_bytes=20), "system_stats")
+
+
+def test_get_json_sanitizes_deeply_nested_json(monkeypatch) -> None:
+    payload = b"[" * 1500 + b"0" + b"]" * 1500
+
+    class DeeplyNested:
+        def __init__(self):
+            self.headers = {"Content-Length": str(len(payload))}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def getcode(self):
+            return 200
+
+        def read(self, limit: int):
+            return payload[:limit]
+
+    opener = type(
+        "Opener",
+        (),
+        {"open": lambda self, request, timeout: DeeplyNested()},
+    )()
+    monkeypatch.setattr(diagnostics, "build_opener", lambda *handlers: opener)
+
+    with pytest.raises(ValueError, match="invalid JSON"):
+        diagnostics._get_json(ComfyUIConfig(max_response_bytes=5000), "object_info")
+
+
+def test_get_json_disables_environment_proxies(monkeypatch) -> None:
+    handlers = []
+
+    def fake_build_opener(*registered):
+        handlers.extend(registered)
+        return type(
+            "Opener",
+            (),
+            {"open": lambda self, request, timeout: FakeResponse({"ok": True})},
+        )()
+
+    monkeypatch.setattr(diagnostics, "build_opener", fake_build_opener)
+    diagnostics._get_json(ComfyUIConfig(), "system_stats")
+
+    proxy_handlers = [handler for handler in handlers if isinstance(handler, diagnostics.ProxyHandler)]
+    assert len(proxy_handlers) == 1
+    assert proxy_handlers[0].proxies == {}
+    assert diagnostics._NoRedirect in handlers

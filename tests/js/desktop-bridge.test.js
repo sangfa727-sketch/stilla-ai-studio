@@ -206,3 +206,39 @@ test("desktop bridge retains the legacy reference import method", async () => {
     "import_character_reference", "project_1", "hero_1",
   ]]);
 });
+
+
+test("desktop bridge exposes read-only ComfyUI capability inspection", async () => {
+  const calls = [];
+  const report = {
+    status: "partial",
+    comfyui_version: "0.3.26",
+    node_count: 2,
+    capabilities: [],
+    generation_ready: false,
+  };
+  const api = new Proxy({}, {
+    get(_target, method) {
+      return async (...args) => {
+        calls.push([String(method), ...args]);
+        if (method === "inspect_comfyui_capabilities") return report;
+        return null;
+      };
+    },
+  });
+  const window = {
+    location: { search: "?runtime=desktop" },
+    pywebview: { api },
+    addEventListener() {},
+  };
+  vm.runInNewContext(source, { window, URLSearchParams });
+
+  const result = await window.STILLABridge.inspectComfyUICapabilities(
+    "http://127.0.0.1:8188",
+  );
+
+  assert.equal(result.generation_ready, false);
+  assert.deepEqual(calls, [[
+    "inspect_comfyui_capabilities", "http://127.0.0.1:8188",
+  ]]);
+});
