@@ -82,7 +82,7 @@
       "Installed ComfyUI conditioning capabilities":"ComfyUI Conditioning စွမ်းဆောင်ရည် စစ်ဆေးချက်",
       "ComfyUI version":"ComfyUI Version","Node classes":"Node Class အရေအတွက်","Generation ready":"Generation အဆင်သင့်",
       "No — discovery only":"မဟုတ်ပါ — ရှာဖွေစစ်ဆေးမှုသာ","Required sockets":"လိုအပ်သော Socket များ",
-      "Schema valid":"Schema မှန်ကန်သည်","Schema mismatch":"Schema မကိုက်ညီပါ","Missing nodes":"မရှိသော Node များ",
+      "Schema valid":"Schema မှန်ကန်သည်","Schema structure valid":"Schema ဖွဲ့စည်းပုံ မှန်ကန်သည်","Schema mismatch":"Schema မကိုက်ညီပါ","Type unavailable":"အမျိုးအစား မဖော်ပြထားပါ","choices":"ရွေးချယ်စရာများ","Missing nodes":"မရှိသော Node များ",
       "Not reported":"မဖော်ပြထားပါ","None":"မရှိပါ","available":"အသုံးပြုနိုင်သည်","partial":"တစ်စိတ်တစ်ပိုင်း","unsupported":"မပံ့ပိုးပါ",
       "Checking installed ComfyUI nodes…":"ComfyUI Node များကို စစ်ဆေးနေသည်…",
       "Inspection complete · discovery only":"စစ်ဆေးမှု ပြီးပါပြီ · ရှာဖွေမှုသာ",
