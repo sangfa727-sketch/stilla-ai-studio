@@ -2,9 +2,9 @@
 
 ## Scope
 
-M7l-B exposes the already-implemented M7l-A read-only capability inspector in the Windows desktop Settings page. It displays the detected ComfyUI version, bounded node-class count, exact supported IPAdapter and InstantID class names, required sockets, schema validity, and missing/partial states.
+M7l-B exposes the already-implemented M7l-A read-only capability inspector in the Windows desktop Settings page. It displays the detected ComfyUI version, bounded node-class count, exact supported IPAdapter and InstantID class names, required socket names, bounded socket-type evidence, schema-structure validity, and missing/partial states. Scalar socket types are shown verbatim; combo inputs expose only their option count, never the option values or local model filenames.
 
-The report is informational only. `generation_ready=false`. The UI rejects malformed reports and any report that claims generation readiness.
+The report is informational only. `generation_ready=false`. The UI rejects malformed reports and any report that claims generation readiness. `schema_valid` means the expected required socket names are present and each type descriptor is structurally parseable; it does not prove cross-node type compatibility or a complete workflow. M7l-C must review the exact local report before compiling any workflow.
 
 ## Local-only boundary
 
@@ -19,7 +19,7 @@ The report is informational only. `generation_ready=false`. The UI rejects malfo
 ## UI and safety
 
 - All server-derived node names and socket names are rendered through DOM `textContent`, never HTML parsing.
-- The UI validates report shape, status enums, node counts, and the mandatory `generation_ready=false` flag.
+- The UI validates report shape, status enums, node counts, socket-type evidence, and the mandatory `generation_ready=false` flag.
 - The operation is read-only and does not change project documents, character identity revisions, Storyboard bindings, or browser-local data.
 - English and Burmese labels are provided.
 - The Settings grid collapses using the existing mobile breakpoints; this is code-level responsive support, not physical-device acceptance.
@@ -46,7 +46,8 @@ Tests use fake ComfyUI catalogs and a fake PyWebView bridge. They do not prove t
 3. Keep the existing local endpoint (`http://127.0.0.1:8188`, unless the user's current setting differs).
 4. Run **Inspect installed conditioning nodes**.
 5. Record the displayed ComfyUI version, IPAdapter/InstantID status, exact class names, required sockets, and missing nodes.
-6. Do not install or update nodes to make the report green.
+6. Record the required socket type shown beside each socket; combo inputs show a bounded option count without exposing local option values.
+7. Do not install or update nodes to make the report green.
 
 If the report is partial or unsupported, M7l-C must remain blocked until an explicit, reviewed adapter plan is written for the exact installed schema. Unknown node names must not be guessed or fuzzy-matched.
 
