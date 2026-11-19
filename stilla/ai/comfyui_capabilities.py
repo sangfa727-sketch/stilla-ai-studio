@@ -48,7 +48,12 @@ class NodeEvidence:
     schema_valid: bool
 
     def to_dict(self) -> dict[str, object]:
-        return asdict(self)
+        return {
+            "class_name": self.class_name,
+            "required_inputs": list(self.required_inputs),
+            "required_input_types": [asdict(item) for item in self.required_input_types],
+            "schema_valid": self.schema_valid,
+        }
 
 
 @dataclass(frozen=True, slots=True)
