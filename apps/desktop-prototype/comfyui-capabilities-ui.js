@@ -13,6 +13,41 @@
     return element;
   }
 
+  function validRequiredInputTypes(node) {
+    if (
+      !Array.isArray(node.required_input_types) ||
+      node.required_input_types.length > 128 ||
+      node.required_input_types.length !== node.required_inputs.length
+    ) {
+      return false;
+    }
+    const seen = new Set();
+    for (const item of node.required_input_types) {
+      if (
+        !item ||
+        typeof item.name !== "string" ||
+        !node.required_inputs.includes(item.name) ||
+        seen.has(item.name) ||
+        (item.input_type !== null && (
+          typeof item.input_type !== "string" ||
+          item.input_type.length < 1 ||
+          item.input_type.length > 128
+        )) ||
+        (item.choice_count !== null && (
+          !Number.isInteger(item.choice_count) ||
+          item.choice_count < 1 ||
+          item.choice_count > 512
+        )) ||
+        (item.input_type === "COMBO" && item.choice_count === null) ||
+        (item.input_type !== "COMBO" && item.choice_count !== null)
+      ) {
+        return false;
+      }
+      seen.add(item.name);
+    }
+    return seen.size === node.required_inputs.length;
+  }
+
   function validateReport(report) {
     if (
       !report ||
@@ -55,7 +90,8 @@
           typeof node.schema_valid !== "boolean" ||
           !Array.isArray(node.required_inputs) ||
           node.required_inputs.length > 128 ||
-          node.required_inputs.some((name) => typeof name !== "string" || name.length > 128)
+          node.required_inputs.some((name) => typeof name !== "string" || name.length > 128) ||
+          (node.required_input_types !== undefined && !validRequiredInputTypes(node))
         ) {
           throw new Error(translate("Capability report is invalid; generation remains disabled."));
         }
@@ -109,14 +145,25 @@
           "span",
           "small muted",
           translate("Required sockets") + ": " +
-            (node.required_inputs.length ? node.required_inputs.join(", ") : translate("None"))
+            (node.required_inputs.length
+              ? node.required_inputs.map((name) => {
+                  const detail = (node.required_input_types || []).find((item) => item.name === name);
+                  if (!detail || !detail.input_type) {
+                    return name + " [" + translate("Type unavailable") + "]";
+                  }
+                  if (detail.input_type === "COMBO") {
+                    return name + " [COMBO · " + detail.choice_count + " " + translate("choices") + "]";
+                  }
+                  return name + " [" + detail.input_type + "]";
+                }).join(", ")
+              : translate("None"))
         );
         item.appendChild(meta);
         appendText(
           item,
           "span",
           "pill " + (node.schema_valid ? "good" : "warn"),
-          translate(node.schema_valid ? "Schema valid" : "Schema mismatch")
+          translate(node.schema_valid ? "Schema structure valid" : "Schema mismatch")
         );
         section.appendChild(item);
       }
