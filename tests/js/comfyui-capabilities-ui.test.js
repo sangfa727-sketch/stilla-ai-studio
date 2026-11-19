@@ -56,11 +56,19 @@ function sampleReport() {
           {
             class_name: "IPAdapterModelLoader",
             required_inputs: ["ipadapter_file"],
+            required_input_types: [{ name: "ipadapter_file", input_type: "COMBO", choice_count: 4 }],
             schema_valid: true,
           },
           {
             class_name: "IPAdapterApply",
             required_inputs: ["ipadapter", "clip_vision", "image", "model", "weight"],
+            required_input_types: [
+              { name: "ipadapter", input_type: "IPADAPTER", choice_count: null },
+              { name: "clip_vision", input_type: "CLIP_VISION", choice_count: null },
+              { name: "image", input_type: "IMAGE", choice_count: null },
+              { name: "model", input_type: "MODEL", choice_count: null },
+              { name: "weight", input_type: "FLOAT", choice_count: null },
+            ],
             schema_valid: true,
           },
         ],
@@ -72,6 +80,10 @@ function sampleReport() {
         nodes: [{
           class_name: "ApplyInstantID",
           required_inputs: ["model", "positive"],
+          required_input_types: [
+            { name: "model", input_type: "MODEL", choice_count: null },
+            { name: "positive", input_type: "CONDITIONING", choice_count: null },
+          ],
           schema_valid: false,
         }],
         missing_nodes: ["InstantIDModelLoader (required input schema mismatch)"],
@@ -88,6 +100,8 @@ test("capability UI renders node schemas and keeps generation explicitly disable
   assert.match(root.textContent, /InstantID/);
   assert.match(root.textContent, /IPAdapterApply/);
   assert.match(root.textContent, /Required sockets/);
+  assert.match(root.textContent, /ipadapter_file \\[COMBO · 4 choices\\]/);
+  assert.match(root.textContent, /model \\[MODEL\\]/);
   assert.match(root.textContent, /generation ready/i);
   assert.match(root.textContent, /No — discovery only/);
 });
@@ -108,6 +122,25 @@ test("capability UI treats server-derived node names as text, not HTML", () => {
 
   assert.match(root.textContent, /<img src=x onerror=alert\(1\)>/);
   assert.equal(root.children.some((child) => child.tagName === "img"), false);
+});
+
+test("capability UI rejects malformed required input type evidence", () => {
+  const { window, root } = setup();
+  const report = sampleReport();
+  report.capabilities[0].nodes[0].required_input_types[0].choice_count = 0;
+
+  assert.throws(
+    () => window.STILLAComfyUICapabilityUI.render(root, report),
+    /generation remains disabled/,
+  );
+});
+
+test("capability UI supports older reports without input type evidence", () => {
+  const { window, root } = setup();
+  const report = sampleReport();
+  delete report.capabilities[0].nodes[0].required_input_types;
+  window.STILLAComfyUICapabilityUI.render(root, report);
+  assert.match(root.textContent, /Type unavailable/);
 });
 
 test("capability UI rejects any report that claims generation readiness", () => {
