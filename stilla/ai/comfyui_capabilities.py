@@ -10,6 +10,8 @@ _MAX_NODE_CLASSES = 20_000
 _MAX_INPUT_NAMES = 128
 _MAX_CLASS_NAME = 128
 _MAX_VERSION_LENGTH = 64
+_MAX_CHOICE_OPTIONS = 512
+_MAX_CHOICE_LENGTH = 200
 
 # These are known ComfyUI node contracts, not fuzzy name matches. A class name
 # alone is never sufficient: every required node and its required input schema
@@ -32,9 +34,17 @@ class ComfyUICapabilityError(RuntimeError):
 
 
 @dataclass(frozen=True, slots=True)
+class RequiredInputEvidence:
+    name: str
+    input_type: str | None
+    choice_count: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class NodeEvidence:
     class_name: str
     required_inputs: tuple[str, ...]
+    required_input_types: tuple[RequiredInputEvidence, ...]
     schema_valid: bool
 
     def to_dict(self) -> dict[str, object]:
@@ -88,25 +98,64 @@ def _version(system_stats: object) -> str | None:
     return clean[:_MAX_VERSION_LENGTH] or None
 
 
-def _required_inputs(node: object) -> tuple[tuple[str, ...], bool]:
+def _required_inputs(
+    node: object,
+) -> tuple[tuple[str, ...], tuple[RequiredInputEvidence, ...], bool]:
     if not isinstance(node, dict):
-        return (), False
+        return (), (), False
     inputs = node.get("input")
     if not isinstance(inputs, dict):
-        return (), False
+        return (), (), False
     required = inputs.get("required", {})
     if not isinstance(required, dict) or len(required) > _MAX_INPUT_NAMES:
-        return (), False
+        return (), (), False
+
     names: list[str] = []
+    evidence: list[RequiredInputEvidence] = []
+    schema_valid = True
     for name, spec in required.items():
-        if not isinstance(name, str) or not name or len(name) > _MAX_CLASS_NAME:
-            return (), False
-        # ComfyUI socket schema values are arrays/tuples whose first member is
-        # the type or a type descriptor. Do not interpret arbitrary values.
-        if not isinstance(spec, (list, tuple)) or not spec:
-            return (), False
+        if (
+            not isinstance(name, str)
+            or not name
+            or len(name) > _MAX_CLASS_NAME
+            or not name.isprintable()
+        ):
+            return (), (), False
         names.append(name)
-    return tuple(sorted(names)), True
+        if not isinstance(spec, (list, tuple)) or not spec:
+            evidence.append(RequiredInputEvidence(name, None))
+            schema_valid = False
+            continue
+
+        descriptor = spec[0]
+        if (
+            isinstance(descriptor, str)
+            and descriptor
+            and len(descriptor) <= _MAX_CLASS_NAME
+            and descriptor.isprintable()
+        ):
+            evidence.append(RequiredInputEvidence(name, descriptor))
+        elif (
+            isinstance(descriptor, (list, tuple))
+            and 0 < len(descriptor) <= _MAX_CHOICE_OPTIONS
+            and all(
+                isinstance(option, str)
+                and 0 < len(option) <= _MAX_CHOICE_LENGTH
+                and option.isprintable()
+                for option in descriptor
+            )
+        ):
+            # Do not expose enum values: they may contain local model filenames.
+            evidence.append(RequiredInputEvidence(name, "COMBO", len(descriptor)))
+        else:
+            evidence.append(RequiredInputEvidence(name, None))
+            schema_valid = False
+
+    return (
+        tuple(sorted(names)),
+        tuple(sorted(evidence, key=lambda item: item.name)),
+        schema_valid,
+    )
 
 
 def discover_conditioning_capabilities(
@@ -130,15 +179,15 @@ def discover_conditioning_capabilities(
                 missing.append(class_name)
                 continue
             present += 1
-            names, schema_valid = _required_inputs(node)
-            # Required inputs may include additional optional implementation
+            names, input_types, schema_valid = _required_inputs(node)
+            # Required inputs may include additional implementation
             # details, but every contract input must be explicitly required.
             schema_valid = schema_valid and set(expected_inputs).issubset(names)
             if not schema_valid:
                 missing.append(class_name + " (required input schema mismatch)")
             else:
                 valid += 1
-            evidence.append(NodeEvidence(class_name, names, schema_valid))
+            evidence.append(NodeEvidence(class_name, names, input_types, schema_valid))
         status = "available" if valid == len(contracts) else "partial" if present else "unsupported"
         reports.append(ConditioningCapability(capability, status, tuple(evidence), tuple(missing)))
 
